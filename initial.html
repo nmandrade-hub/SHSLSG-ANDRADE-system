@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SHSLSG: ANDRADE System — Camera Test</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    :root {
+      --navy: #14213d;
+      --blue: #2457d6;
+      --background: #f5f7fb;
+      --text: #202938;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      background: var(--background);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+    }
+
+    main {
+      max-width: 650px;
+      margin: 30px auto;
+      padding: 24px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 5px 24px #14213d15;
+    }
+
+    h1 { color: var(--navy); font-size: 24px; }
+
+    button, select {
+      padding: 12px;
+      margin: 5px 3px 5px 0;
+      border: 0;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    select {
+      width: 100%;
+      border: 1px solid #ddd;
+      background: white;
+    }
+
+    button {
+      background: var(--blue);
+      color: white;
+      cursor: pointer;
+    }
+
+    button:disabled { opacity: .5; }
+
+    #reader { width: 100%; margin-top: 18px; }
+
+    #status, #result {
+      padding: 12px;
+      margin-top: 14px;
+      background: #edf3ff;
+      border-radius: 8px;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>SHSLSG: ANDRADE System</h1>
+  <p>Camera scanner diagnostic</p>
+
+  <label for="cameraSelect">Choose camera</label>
+  <select id="cameraSelect">
+    <option value="">Detecting cameras...</option>
+  </select>
+
+  <div>
+    <button id="startButton" disabled>Start camera</button>
+    <button id="stopButton" disabled>Stop camera</button>
+  </div>
+
+  <div id="reader"></div>
+  <div id="status">Checking browser and camera support...</div>
+  <div id="result">No QR code scanned yet.</div>
+</main>
+
+<script>
+  const cameraSelect = document.getElementById("cameraSelect");
+  const startButton = document.getElementById("startButton");
+  const stopButton = document.getElementById("stopButton");
+  const statusBox = document.getElementById("status");
+  const resultBox = document.getElementById("result");
+
+  let scanner = null;
+  let running = false;
+
+  function status(message) {
+    statusBox.textContent = message;
+  }
+
+  async function loadCameras() {
+    if (!window.isSecureContext) {
+      status("This page is not a secure context. Open the HTTPS GitHub Pages URL.");
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      status("Camera API unavailable. Check the browser and page security.");
+      return;
+    }
+
+    if (typeof Html5Qrcode === "undefined") {
+      status("Scanner library failed to load. Check your internet connection.");
+      return;
+    }
+
+    try {
+      const cameras = await Html5Qrcode.getCameras();
+
+      if (!cameras.length) {
+        status("No cameras detected.");
+        return;
+      }
+
+      cameraSelect.replaceChildren();
+
+      cameras.forEach((camera, index) => {
+        const option = document.createElement("option");
+        option.value = camera.id;
+        option.textContent = camera.label || `Camera ${index + 1}`;
+        cameraSelect.appendChild(option);
+      });
+
+      const rearCamera = cameras.find(c =>
+        /back|rear|environment/i.test(c.label)
+      );
+
+      if (rearCamera) cameraSelect.value = rearCamera.id;
+
+      startButton.disabled = false;
+      status("Camera detected. Click Start camera to test scanning.");
+    } catch (error) {
+      status("Camera detection failed: " + error.name + ": " + error.message);
+    }
+  }
+
+  startButton.addEventListener("click", async () => {
+    if (running) return;
+
+    startButton.disabled = true;
+
+    try {
+      scanner = new Html5Qrcode("reader");
+
+      await scanner.start(
+        cameraSelect.value,
+        { fps: 10, qrbox: { width: 240, height: 240 } },
+        text => {
+          resultBox.textContent = "QR detected:\n" + text;
+          status("Camera works! QR detection succeeded.");
+        },
+        () => {}
+      );
+
+      running = true;
+      stopButton.disabled = false;
+      status("Camera started. Point it at a QR code.");
+    } catch (error) {
+      scanner = null;
+      status("Camera failed: " + error.name + ": " + error.message);
+      startButton.disabled = false;
+    }
+  });
+
+  stopButton.addEventListener("click", async () => {
+    if (!scanner || !running) return;
+
+    try {
+      await scanner.stop();
+      await scanner.clear();
+      status("Camera stopped.");
+    } catch (error) {
+      status("Could not stop camera cleanly: " + error.message);
+    } finally {
+      scanner = null;
+      running = false;
+      startButton.disabled = false;
+      stopButton.disabled = true;
+    }
+  });
+
+  window.addEventListener("pagehide", () => {
+    if (scanner && running) scanner.stop().catch(() => {});
+  });
+
+  loadCameras();
+</script>
+</body>
+</html>
