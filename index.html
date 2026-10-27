@@ -1,253 +1,268 @@
-<div class="panel"><h3>Event list</h3><div class="table-wrap"><table><thead><tr><th>Event</th><th>Date</th><th>Time</th><th>Venue</th><th>Status</th></tr></thead><tbody id="eventsBody"></tbody></table></div></div></section>
-<section id="page-register" class="page hidden"><div class="heading"><div><h2>Register student</h2><p>Register each student once. Their QR code works for all events.</p></div></div>
-<div class="panel"><h3>Student information</h3><form id="participantForm"><div class="form-grid"><div class="field span-2"><label for="studentName">Full name *</label><input id="studentName" required placeholder="Student full name"></div><div class="field"><label for="gradeLevel">Grade level *</label><select id="gradeLevel" required><option value="">Select grade</option><option>Grade 7</option><option>Grade 8</option><option>Grade 9</option><option>Grade 10</option><option>Grade 11</option><option>Grade 12</option></select></div><div class="field"><label for="studentSection">Section</label><input id="studentSection" placeholder="Section"></div><div class="field span-2"><label for="studentEmail">Email (optional)</label><input id="studentEmail" type="email" placeholder="student@example.com"></div></div><button id="registerButton" class="btn primary" type="submit">Register student and generate QR</button></form></div>
-<div id="qrPanel" class="panel hidden"><div class="student-card" id="printArea"><h3>Student QR Code</h3><p id="qrStudentName"></p><div class="qr-holder" id="qrCode"></div><p class="qr-data" id="qrDataText"></p></div><div class="toolbar no-print" style="margin-top:14px"><button class="btn primary" onclick="downloadQr()">Download QR</button><button class="btn secondary" onclick="printQr()">Print QR</button></div></div></section>
-<section id="page-scanner" class="page hidden"><div class="heading"><div><h2>QR scanner</h2><p>Select an event before scanning a student QR code.</p></div></div>
-<div class="panel"><div class="field"><label for="scannerEvent">Event *</label><select id="scannerEvent" required><option value="">Select an event</option></select></div><div class="scan-grid"><div><div id="reader"></div><div class="toolbar" style="margin-top:12px"><button id="startScannerButton" class="btn primary" onclick="startScanner()">Start camera</button><button class="btn secondary" onclick="stopScanner()">Stop camera</button></div></div><div><h3>Manual check-in</h3><form id="manualCheckInForm"><div class="field"><label for="manualQrData">Student QR data</label><input id="manualQrData" required placeholder="Scan data or student QR ID"></div><button class="btn primary full" type="submit">Record attendance</button></form><h3 style="margin-top:18px">Scan result</h3><div id="scanResult" class="scan-result">Waiting for a scan.</div></div></div></div></section>
-<section id="page-participants" class="page hidden"><div class="heading"><div><h2>Participants</h2><p>View registered students and their QR codes.</p></div><button class="btn secondary" onclick="loadParticipants()">Refresh</button></div><div class="panel"><div class="toolbar"><input id="participantSearch" placeholder="Search students..." oninput="renderParticipants()"></div><div class="table-wrap"><table><thead><tr><th>Full name</th><th>Grade</th><th>Section</th><th>QR code</th></tr></thead><tbody id="participantsBody"></tbody></table></div></div></section>
-<section id="page-reports" class="page hidden"><div class="heading"><div><h2>Attendance reports</h2><p>Review attendance for a selected event.</p></div></div><div class="panel"><div class="toolbar"><select id="reportEventFilter" onchange="loadReport()"><option value="">All events</option></select><button class="btn primary" onclick="loadReport()">Generate report</button><button class="btn secondary" onclick="exportCsv()">Export CSV</button><button class="btn secondary" onclick="window.print()">Print</button></div><div class="table-wrap"><table><thead><tr><th>Full name</th><th>Grade</th><th>Section</th><th>Status</th><th>Check-in time</th></tr></thead><tbody id="reportBody"></tbody></table></div></div></section>
-</main></div><div class="footer">SHSLSG: ANDRADE system</div></section>
-<script>
-const API_URL = "https://script.google.com/a/macros/usa.edu.ph/s/AKfycbwimq8azYKwkKfk-6jE_NHeCstTH_QwGiMd_hD4nCn1XphL0D-6XcN71iKs_vxFLLjoTw/exec";
-const $ = id => document.getElementById(id);
-let organizerPin = "";
-let allEvents = [];
-let allParticipants = [];
-let attendanceReport = [];
-let scanner = null;
-let scannerRunning = false;
-let checkInInProgress = false;
-let lastScannedText = "";
-let lastScanTime = 0;
-let currentQrParticipant = null;
-let currentQrData = "";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHSLSG: ANDRADE system</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<style>
+:root {
+  --navy:#632b45;
+  --pink:#d94f88;
+  --pink-dark:#b8326c;
+  --light:#fff0f6;
+  --bg:#fff8fb;
+  --border:#f0d5e1;
+  --text:#30232a;
+  --muted:#806b76;
+  --green:#14804a;
+  --red:#b42318;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:22px;background:linear-gradient(135deg,#632b45,#d94f88)}
+.login-card{background:#fff;width:100%;max-width:540px;padding:36px;border-radius:26px;box-shadow:0 18px 55px #4a183025;text-align:center}
+.login-card h1{font-size:clamp(25px,4vw,38px);line-height:1.25;margin:0 0 26px;overflow-wrap:anywhere}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.field{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;text-align:left}
+label{font-size:14px;font-weight:750}
+input,select,textarea{width:100%;padding:13px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--pink);box-shadow:0 0 0 3px #d94f8818}
+textarea{min-height:85px;resize:vertical}
+.btn{padding:12px 16px;border:0;border-radius:12px;font-weight:750}
+.primary{background:var(--pink);color:#fff}
+.primary:hover{background:var(--pink-dark)}
+.secondary{background:var(--light);color:var(--navy)}
+.full{width:100%}
+button:disabled{opacity:.55;cursor:not-allowed}
+.topbar{background:var(--navy);color:#fff;padding:17px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand h1{font-size:21px;margin:0}
+.brand p{margin:5px 0 0;color:#f7dce8;font-size:13px}
+.layout{display:grid;grid-template-columns:235px minmax(0,1fr);max-width:1700px;margin:auto;min-height:calc(100vh - 75px)}
+.sidebar{background:#fff;border-right:1px solid var(--border);padding:17px 12px}
+.nav{display:block;width:100%;text-align:left;padding:14px 13px;margin-bottom:7px;border:0;border-radius:12px;background:transparent;color:#604b56;font-weight:700}
+.nav.active{background:var(--light);color:var(--pink-dark)}
+.main{min-width:0;padding:25px}
+.heading{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+.heading h2{font-size:clamp(23px,3vw,32px);margin:0 0 6px}
+.heading p{margin:0;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.stat,.panel{background:#fff;border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:17px}
+.stat-label{color:var(--muted);font-size:13px;margin-bottom:8px}
+.stat-number{font-size:30px;font-weight:850;color:var(--pink-dark)}
+.panel h3{font-size:19px;margin:0 0 16px}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 15px}
+.span-2{grid-column:1/-1}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:15px}
+.toolbar select,.toolbar input{flex:1;min-width:150px}
+.table-wrap{width:100%;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;white-space:nowrap}
+th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--border)}
+th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.pill{display:inline-block;padding:5px 9px;border-radius:99px;font-size:11px;font-weight:750;background:var(--light);color:var(--pink-dark)}
+.present{background:#e6f7ed;color:var(--green)}
+.absent{background:#fff0ef;color:var(--red)}
+.empty{padding:25px;text-align:center;color:var(--muted)}
+.notice{display:none;padding:13px 15px;margin-bottom:16px;border-radius:12px;white-space:pre-wrap;font-size:14px;overflow-wrap:anywhere}
+.notice.show{display:block}
+.notice.success{background:#e6f7ed;color:#126b3b}
+.notice.error{background:#fff0ef;color:#a61b1b}
+.notice.info{background:var(--light);color:var(--pink-dark)}
+.scan-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(260px,.9fr);gap:17px}
+#reader{width:100%;max-width:650px;margin:auto}
+#reader video{border-radius:12px}
+.scan-result{min-height:120px;padding:16px;border-radius:12px;background:var(--light);overflow-wrap:anywhere;white-space:pre-wrap}
+.student-card{max-width:430px;margin:auto;padding:24px;border:1px solid var(--border);border-radius:18px;text-align:center;background:#fff}
+.qr-holder{min-height:220px;display:flex;align-items:center;justify-content:center;margin:18px 0}
+.qr-holder img,.qr-holder canvas{max-width:100%;height:auto}
+.qr-data{overflow-wrap:anywhere;font-size:11px;color:var(--muted)}
+.footer{text-align:center;padding:18px;color:var(--muted);font-size:11px}
+@media(max-width:1000px){
+ .layout{grid-template-columns:1fr}
+ .sidebar{display:flex;overflow-x:auto;gap:5px;border-right:0;border-bottom:1px solid var(--border);padding:9px}
+ .nav{width:auto;flex:0 0 auto;margin:0;white-space:nowrap}
+ .main{padding:17px}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:650px){
+ .form-grid,.scan-grid{grid-template-columns:1fr}
+ .span-2{grid-column:auto}
+ .stat{padding:14px}
+ .stat-number{font-size:24px}
+ .main{padding:12px}
+ .panel{padding:15px}
+ .login-card{padding:25px}
+ .topbar{padding:15px}
+}
+@media print{
+ body *{visibility:hidden}
+ #printArea,#printArea *{visibility:visible}
+ #printArea{position:absolute;left:0;top:0;width:100%;border:0}
+ .no-print{display:none!important}
+}
+</style>
+</head>
+<body>
 
-function serverCall(fn, args = []) {
-  return new Promise((resolve, reject) => {
-    const actions = {
-      authorize: "authorize",
-      getEvents: "getEvents",
-      createEvent: "createEvent",
-      getParticipants: "getParticipants",
-      addParticipant: "addParticipant",
-      checkIn: "checkIn",
-      getDashboard: "getDashboard",
-      getReport: "getReport"
-    };
-    const action = actions[fn];
-    if (!action) return reject(new Error("Unknown server action: " + fn));
+<section id="loginScreen" class="login">
+  <div class="login-card">
+    <h1>SHSLSG: ANDRADE system</h1>
+    <div id="loginNotice" class="notice"></div>
+    <form id="loginForm">
+      <div class="field">
+        <label for="pinInput">Organizer PIN</label>
+        <input id="pinInput" type="password" autocomplete="current-password" placeholder="Enter organizer PIN" required>
+      </div>
+      <button id="loginButton" class="btn primary full" type="submit">Sign in</button>
+    </form>
+    <p class="muted small" style="margin-top:16px">Authorized organizers only.</p>
+  </div>
+</section>
 
-    const params = new URLSearchParams();
-    params.set("action", action);
-    params.set("pin", args[0] || "");
+<section id="appScreen" class="hidden">
+<header class="topbar">
+  <div class="brand">
+    <h1>SHSLSG: ANDRADE system</h1>
+    <p>Student attendance and event management</p>
+  </div>
+  <button class="btn secondary" onclick="logout()">Sign out</button>
+</header>
 
-    if (fn === "createEvent" || fn === "addParticipant") {
-      params.set("data", JSON.stringify(args[1] || {}));
-    }
-    if (fn === "checkIn") {
-      params.set("qrData", args[1] || "");
-      params.set("eventId", args[2] || "");
-      params.set("recordedBy", args[3] || "Organizer");
-    }
-    if (fn === "getDashboard" || fn === "getReport") {
-      params.set("eventId", args[1] || "");
-    }
+<div class="layout">
+<aside class="sidebar no-print">
+  <button class="nav active" data-page="dashboard" onclick="showPage('dashboard',this)">▦ Dashboard</button>
+  <button class="nav" data-page="events" onclick="showPage('events',this)">▣ Events</button>
+  <button class="nav" data-page="register" onclick="showPage('register',this)">＋ Register student</button>
+  <button class="nav" data-page="scanner" onclick="showPage('scanner',this)">⌗ QR scanner</button>
+  <button class="nav" data-page="participants" onclick="showPage('participants',this)">♙ Participants</button>
+  <button class="nav" data-page="reports" onclick="showPage('reports',this)">▤ Reports</button>
+</aside>
 
-    const callbackName = "__andrade_" + Date.now() + "_" +
-      Math.random().toString(36).slice(2);
-    const script = document.createElement("script");
-    const timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error("Connection timed out. Check the Apps Script deployment and access permissions."));
-    }, 20000);
+<main class="main">
+<div id="globalNotice" class="notice"></div>
 
-    function cleanup() {
-      clearTimeout(timeout);
-      delete window[callbackName];
-      if (script.parentNode) script.parentNode.removeChild(script);
-    }
+<section id="page-dashboard" class="page">
+  <div class="heading">
+    <div><h2>Dashboard</h2><p>Attendance overview and recent check-ins.</p></div>
+    <button class="btn primary" onclick="refreshDashboard()">Refresh</button>
+  </div>
+  <div class="toolbar"><select id="dashboardEventFilter" onchange="refreshDashboard()"><option value="">All events</option></select></div>
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Total events</div><div id="statEvents" class="stat-number">0</div></div>
+    <div class="stat"><div class="stat-label">Registered students</div><div id="statRegistered" class="stat-number">0</div></div>
+    <div class="stat"><div class="stat-label">Checked in</div><div id="statCheckedIn" class="stat-number">0</div></div>
+    <div class="stat"><div class="stat-label">Attendance rate</div><div id="statRate" class="stat-number">0%</div></div>
+  </div>
+  <div class="panel">
+    <h3>Recent check-ins</h3>
+    <div class="table-wrap"><table><thead><tr><th>Name</th><th>Event</th><th>Check-in time</th><th>Status</th></tr></thead><tbody id="recentAttendanceBody"></tbody></table></div>
+  </div>
+</section>
 
-    window[callbackName] = result => {
-      cleanup();
-      if (!result || result.success === false) {
-        reject(new Error(result && result.message ? result.message : "The server request failed."));
-        return;
-      }
-      if (fn === "getEvents") resolve(result.events || []);
-      else if (fn === "getParticipants") resolve(result.participants || []);
-      else if (fn === "getReport") resolve(result.report || []);
-      else resolve(result);
-    };
+<section id="page-events" class="page hidden">
+  <div class="heading"><div><h2>Events</h2><p>Create and manage attendance events.</p></div><button class="btn secondary" onclick="loadEvents()">Refresh</button></div>
+  <div class="panel">
+    <h3>Create an event</h3>
+    <form id="eventForm">
+      <div class="form-grid">
+        <div class="field"><label for="eventName">Event name *</label><input id="eventName" required placeholder="Student Orientation"></div>
+        <div class="field"><label for="eventDate">Event date *</label><input id="eventDate" type="date" required></div>
+        <div class="field"><label for="eventTime">Event time</label><input id="eventTime" type="time"></div>
+        <div class="field"><label for="eventVenue">Venue</label><input id="eventVenue" placeholder="School auditorium"></div>
+        <div class="field span-2"><label for="eventOrganizer">Organizer</label><input id="eventOrganizer" placeholder="Organizer or department"></div>
+        <div class="field span-2"><label for="eventDescription">Description</label><textarea id="eventDescription" placeholder="Optional details"></textarea></div>
+      </div>
+      <button id="createEventButton" class="btn primary" type="submit">Create event</button>
+    </form>
+  </div>
+  <div class="panel"><h3>Event list</h3><div class="table-wrap"><table><thead><tr><th>Event</th><th>Date</th><th>Time</th><th>Venue</th><th>Status</th></tr></thead><tbody id="eventsBody"></tbody></table></div></div>
+</section>
+<section id="page-register" class="page hidden">
+  <div class="heading"><div><h2>Register student</h2><p>Register each student once. Their QR code works for all events.</p></div></div>
+  <div class="panel">
+    <h3>Student information</h3>
+    <form id="participantForm">
+      <div class="form-grid">
+        <div class="field span-2"><label for="studentName">Full name *</label><input id="studentName" required placeholder="Student full name"></div>
+        <div class="field"><label for="gradeLevel">Grade level *</label><select id="gradeLevel" required><option value="">Select grade</option><option>Grade 7</option><option>Grade 8</option><option>Grade 9</option><option>Grade 10</option><option>Grade 11</option><option>Grade 12</option></select></div>
+        <div class="field"><label for="studentSection">Section</label><input id="studentSection" placeholder="Section"></div>
+        <div class="field span-2"><label for="studentEmail">Email (optional)</label><input id="studentEmail" type="email" placeholder="student@example.com"></div>
+      </div>
+      <button id="registerButton" class="btn primary" type="submit">Register student and generate QR</button>
+    </form>
+  </div>
+  <div id="qrPanel" class="panel hidden">
+    <div class="student-card" id="printArea">
+      <h3>Student QR Code</h3>
+      <p id="qrStudentName"></p>
+      <div class="qr-holder" id="qrCode"></div>
+      <p class="qr-data" id="qrDataText"></p>
+    </div>
+    <div class="toolbar no-print" style="margin-top:14px">
+      <button class="btn primary" onclick="downloadQr()">Download QR</button>
+      <button class="btn secondary" onclick="printQr()">Print QR</button>
+    </div>
+  </div>
+</section>
 
-    params.set("callback", callbackName);
-    script.src = API_URL + "?" + params.toString();
-    script.onerror = () => {
-      cleanup();
-      reject(new Error("Could not connect to Apps Script. Check the deployment URL and access settings."));
-    };
-    document.head.appendChild(script);
-  });
-}
+<section id="page-scanner" class="page hidden">
+  <div class="heading"><div><h2>QR scanner</h2><p>Select an event before scanning a student QR code.</p></div></div>
+  <div class="panel">
+    <div class="field"><label for="scannerEvent">Event *</label><select id="scannerEvent" required><option value="">Select an event</option></select></div>
+    <div class="scan-grid">
+      <div>
+        <h3>Camera scanner</h3>
+        <div id="reader"></div>
+        <div class="toolbar" style="margin-top:12px">
+          <button id="startScannerButton" class="btn primary" onclick="startScanner()">Start camera</button>
+          <button class="btn secondary" onclick="stopScanner()">Stop camera</button>
+        </div>
+      </div>
+      <div>
+        <h3>Manual check-in</h3>
+        <p class="muted">If scanning does not work, paste the student's QR data below.</p>
+        <form id="manualCheckInForm">
+          <div class="field"><label for="manualQrData">Student QR data</label><input id="manualQrData" required placeholder="Paste student QR data"></div>
+          <button class="btn primary full" type="submit">Record attendance</button>
+        </form>
+        <h3 style="margin-top:18px">Scan result</h3>
+        <div id="scanResult" class="scan-result">Waiting for a scan.</div>
+      </div>
+    </div>
+  </div>
+</section>
 
-function notice(id, message, type = "info") {
-  const el = $(id);
-  if (!el) return;
-  el.textContent = message;
-  el.className = "notice show " + type;
-}
-function hideNotice(id) {
-  const el = $(id);
-  if (el) el.className = "notice";
-}
-function busy(id, on, label) {
-  const el = $(id);
-  if (!el) return;
-  if (on) {
-    el.dataset.oldText = el.textContent;
-    el.textContent = label || "Please wait...";
-    el.disabled = true;
-  } else {
-    el.textContent = el.dataset.oldText || el.textContent;
-    el.disabled = false;
-  }
-}
-function escapeHtml(v) {
-  return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({
-    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
-  }[c]));
-}
-function dateText(v) {
-  if (!v) return "—";
-  const d = new Date(v + "T00:00:00");
-  return isNaN(d) ? String(v) : d.toLocaleDateString();
-}
-function dateTimeText(v) {
-  if (!v) return "—";
-  const d = new Date(v);
-  return isNaN(d) ? String(v) : d.toLocaleString();
-}
-function localDate() {
-  const d = new Date();
-  return d.getFullYear() + "-" +
-    String(d.getMonth() + 1).padStart(2, "0") + "-" +
-    String(d.getDate()).padStart(2, "0");
-}
+<section id="page-participants" class="page hidden">
+  <div class="heading"><div><h2>Participants</h2><p>View registered students and their QR codes.</p></div><button class="btn secondary" onclick="loadParticipants()">Refresh</button></div>
+  <div class="panel">
+    <div class="toolbar"><input id="participantSearch" placeholder="Search students..." oninput="renderParticipants()"></div>
+    <div class="table-wrap"><table><thead><tr><th>Full name</th><th>Grade</th><th>Section</th><th>QR code</th></tr></thead><tbody id="participantsBody"></tbody></table></div>
+  </div>
+</section>
 
-$("loginForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  organizerPin = $("pinInput").value.trim();
-  busy("loginButton", true, "Signing in...");
-  try {
-    const result = await serverCall("authorize", [organizerPin]);
-    if (!result.success) throw new Error(result.message || "Login failed.");
-    $("loginScreen").classList.add("hidden");
-    $("appScreen").classList.remove("hidden");
-    notice("globalNotice", "Signed in successfully.", "success");
-    await loadEvents();
-    await loadParticipants();
-    await refreshDashboard();
-  } catch (err) {
-    notice("loginNotice", err.message, "error");
-  } finally {
-    busy("loginButton", false);
-  }
-});
+<section id="page-reports" class="page hidden">
+  <div class="heading"><div><h2>Attendance reports</h2><p>Review attendance for a selected event.</p></div></div>
+  <div class="panel">
+    <div class="toolbar">
+      <select id="reportEventFilter" onchange="loadReport()"><option value="">All events</option></select>
+      <button class="btn primary" onclick="loadReport()">Generate report</button>
+      <button class="btn secondary" onclick="exportCsv()">Export CSV</button>
+      <button class="btn secondary" onclick="window.print()">Print</button>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>Full name</th><th>Grade</th><th>Section</th><th>Status</th><th>Check-in time</th></tr></thead><tbody id="reportBody"></tbody></table></div>
+  </div>
+</section>
 
-async function logout() {
-  await stopScanner();
-  organizerPin = "";
-  $("pinInput").value = "";
-  $("appScreen").classList.add("hidden");
-  $("loginScreen").classList.remove("hidden");
-  hideNotice("loginNotice");
-}
-
-function showPage(name, button) {
-  document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
-  $("page-" + name).classList.remove("hidden");
-  document.querySelectorAll(".nav").forEach(n => n.classList.remove("active"));
-  if (button) button.classList.add("active");
-  else {
-    const n = document.querySelector('[data-page="' + name + '"]');
-    if (n) n.classList.add("active");
-  }
-  hideNotice("globalNotice");
-  if (name === "dashboard") refreshDashboard();
-  if (name === "events") loadEvents();
-  if (name === "participants") loadParticipants();
-  if (name === "reports") loadReport();
-}
-
-async function loadEvents() {
-  if (!organizerPin) return;
-  try {
-    allEvents = await serverCall("getEvents", [organizerPin]);
-    if (!Array.isArray(allEvents)) allEvents = [];
-    populateEventSelects();
-    renderEvents();
-  } catch (e) {
-    notice("globalNotice", e.message, "error");
-  }
-}
-function fillSelect(id, label) {
-  const s = $(id);
-  if (!s) return;
-  const prev = s.value;
-  s.innerHTML = "";
-  const first = document.createElement("option");
-  first.value = "";
-  first.textContent = label;
-  s.appendChild(first);
-  allEvents.forEach(ev => {
-    const o = document.createElement("option");
-    o.value = ev.id;
-    o.textContent = ev.name + " — " + dateText(ev.date);
-    s.appendChild(o);
-  });
-  if (allEvents.some(e => e.id === prev)) s.value = prev;
-}
-function populateEventSelects() {
-  fillSelect("dashboardEventFilter", "All events");
-  fillSelect("scannerEvent", "Select an event");
-  fillSelect("reportEventFilter", "All events");
-}
-function renderEvents() {
-  $("eventsBody").innerHTML = allEvents.length
-    ? allEvents.map(e => `<tr>
-        <td><strong>${escapeHtml(e.name)}</strong><div class="muted small">${escapeHtml(e.id)}</div></td>
-        <td>${escapeHtml(dateText(e.date))}</td>
-        <td>${escapeHtml(e.time || "—")}</td>
-        <td>${escapeHtml(e.venue || "—")}</td>
-        <td><span class="pill ${e.status === "Active" ? "present" : ""}">${escapeHtml(e.status || "Active")}</span></td>
-      </tr>`).join("")
-    : '<tr><td colspan="5" class="empty">No events yet. Create an event above.</td></tr>';
-}
-
-$("eventForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  busy("createEventButton", true, "Creating...");
-  const d = {
-    name: $("eventName").value.trim(),
-    date: $("eventDate").value,
-    time: $("eventTime").value,
-    venue: $("eventVenue").value.trim(),
-    organizer: $("eventOrganizer").value.trim(),
-    description: $("eventDescription").value.trim()
-  };
-  try {
-    const r = await serverCall("createEvent", [organizerPin, d]);
-    $("eventForm").reset();
-    $("eventDate").value = localDate();
-    notice("globalNotice", r.message, "success");
-    await loadEvents();
-    await refreshDashboard();
-  } catch (err) {
-    notice("globalNotice", err.message, "error");
-  } finally {
-    busy("createEventButton", false);
-  }
-});
-  $("participantForm").addEventListener("submit", async e => {
+</main>
+</div>
+<div class="footer">SHSLSG: ANDRADE system</div>
+</section>
+$("participantForm").addEventListener("submit", async e => {
   e.preventDefault();
   busy("registerButton", true, "Registering...");
   const d = {
