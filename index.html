@@ -4,201 +4,318 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SHSLSG: ANDRADE System — Camera Test</title>
+  <title>ANDRADE System | QR Scanner</title>
+
   <script src="https://unpkg.com/html5-qrcode"></script>
+
   <style>
     :root {
-      --navy: #14213d;
-      --blue: #2457d6;
-      --background: #f5f7fb;
-      --text: #202938;
+      --navy: #142b4a;
+      --blue: #2457a7;
+      --light: #f3f6fb;
+      --white: #ffffff;
+      --green: #17864b;
+      --red: #c93636;
+      --text: #1e293b;
+      --muted: #64748b;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
-      padding: 24px;
-      background: var(--background);
+      padding: 20px;
+      background: var(--light);
       color: var(--text);
       font-family: Arial, sans-serif;
     }
 
-    main {
-      max-width: 650px;
-      margin: 30px auto;
-      padding: 24px;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 5px 24px #14213d15;
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
     }
 
-    h1 { color: var(--navy); font-size: 24px; }
+    .header {
+      background: var(--navy);
+      color: white;
+      padding: 24px 18px;
+      border-radius: 16px 16px 0 0;
+      text-align: center;
+    }
 
-    button, select {
+    .header h1 {
+      margin: 0 0 8px;
+      font-size: 25px;
+    }
+
+    .header p {
+      margin: 0;
+      opacity: 0.85;
+      font-size: 14px;
+    }
+
+    .panel {
+      background: var(--white);
+      padding: 20px;
+      border-radius: 0 0 16px 16px;
+      box-shadow: 0 8px 25px rgba(20, 43, 74, 0.08);
+    }
+
+    #status {
       padding: 12px;
-      margin: 5px 3px 5px 0;
-      border: 0;
+      background: #eaf1ff;
+      color: var(--navy);
       border-radius: 8px;
-      font-size: 15px;
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 16px;
+      overflow-wrap: anywhere;
     }
 
-    select {
+    #reader {
       width: 100%;
-      border: 1px solid #ddd;
-      background: white;
+      overflow: hidden;
+      border-radius: 12px;
+    }
+
+    #result {
+      margin-top: 16px;
+      padding: 14px;
+      background: #f8fafc;
+      border: 1px solid #dbe3ef;
+      border-radius: 10px;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      font-size: 14px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
     }
 
     button {
+      flex: 1;
+      padding: 13px 10px;
+      border: none;
+      border-radius: 9px;
       background: var(--blue);
       color: white;
+      font-weight: bold;
       cursor: pointer;
+      font-size: 14px;
     }
 
-    button:disabled { opacity: .5; }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
 
-    #reader { width: 100%; margin-top: 18px; }
+    #stopButton {
+      background: #475569;
+    }
 
-    #status, #result {
+    .notice {
+      margin-top: 18px;
       padding: 12px;
-      margin-top: 14px;
-      background: #edf3ff;
+      background: #fff7e6;
       border-radius: 8px;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
+      color: #805b13;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .footer {
+      margin-top: 18px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
     }
   </style>
 </head>
+
 <body>
-<main>
-  <h1>SHSLSG: ANDRADE System</h1>
-  <p>Camera scanner diagnostic</p>
+  <main class="container">
+    <header class="header">
+      <h1>ANDRADE System</h1>
+      <p>QR Student Attendance Scanner</p>
+    </header>
 
-  <label for="cameraSelect">Choose camera</label>
-  <select id="cameraSelect">
-    <option value="">Detecting cameras...</option>
-  </select>
+    <section class="panel">
+      <div id="status" role="status" aria-live="polite">
+        Ready. Press Start Camera to begin.
+      </div>
 
-  <div>
-    <button id="startButton" disabled>Start camera</button>
-    <button id="stopButton" disabled>Stop camera</button>
-  </div>
+      <div id="reader"></div>
 
-  <div id="reader"></div>
-  <div id="status">Checking browser and camera support...</div>
-  <div id="result">No QR code scanned yet.</div>
-</main>
+      <div class="buttons">
+        <button id="startButton" type="button">
+          Start Camera
+        </button>
 
-<script>
-  const cameraSelect = document.getElementById("cameraSelect");
-  const startButton = document.getElementById("startButton");
-  const stopButton = document.getElementById("stopButton");
-  const statusBox = document.getElementById("status");
-  const resultBox = document.getElementById("result");
+        <button id="stopButton" type="button" disabled>
+          Stop Camera
+        </button>
+      </div>
 
-  let scanner = null;
-  let running = false;
+      <div id="result">
+        Scanned QR information will appear here.
+      </div>
 
-  function status(message) {
-    statusBox.textContent = message;
-  }
+      <div class="notice">
+        <strong>Important:</strong> Open this scanner using the camera
+        button inside your Google Apps Script attendance system.
+        After scanning, the QR data will be sent back to that window.
+        This page alone does not save attendance.
+      </div>
 
-  async function loadCameras() {
-    if (!window.isSecureContext) {
-      status("This page is not a secure context. Open the HTTPS GitHub Pages URL.");
-      return;
+      <div class="footer">
+        SHSLSG • ANDRADE System
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const statusBox = document.getElementById("status");
+    const resultBox = document.getElementById("result");
+    const startButton = document.getElementById("startButton");
+    const stopButton = document.getElementById("stopButton");
+
+    let scanner = null;
+    let cameraRunning = false;
+    let processingScan = false;
+    let lastScannedText = "";
+
+    function setStatus(message) {
+      statusBox.textContent = message;
     }
 
-    if (!navigator.mediaDevices?.getUserMedia) {
-      status("Camera API unavailable. Check the browser and page security.");
-      return;
-    }
+    async function startCamera() {
+      if (cameraRunning) return;
 
-    if (typeof Html5Qrcode === "undefined") {
-      status("Scanner library failed to load. Check your internet connection.");
-      return;
-    }
-
-    try {
-      const cameras = await Html5Qrcode.getCameras();
-
-      if (!cameras.length) {
-        status("No cameras detected.");
+      if (typeof Html5Qrcode === "undefined") {
+        setStatus("Scanner library failed to load. Check your internet connection.");
         return;
       }
 
-      cameraSelect.replaceChildren();
+      processingScan = false;
+      lastScannedText = "";
 
-      cameras.forEach((camera, index) => {
-        const option = document.createElement("option");
-        option.value = camera.id;
-        option.textContent = camera.label || `Camera ${index + 1}`;
-        cameraSelect.appendChild(option);
-      });
+      try {
+        scanner = new Html5Qrcode("reader");
 
-      const rearCamera = cameras.find(c =>
-        /back|rear|environment/i.test(c.label)
-      );
+        setStatus("Requesting camera access...");
 
-      if (rearCamera) cameraSelect.value = rearCamera.id;
+        await scanner.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: function (width, height) {
+              const size = Math.floor(Math.min(width, height) * 0.7);
+              return { width: size, height: size };
+            }
+          },
+          async function (decodedText) {
+            if (processingScan || decodedText === lastScannedText) {
+              return;
+            }
 
-      startButton.disabled = false;
-      status("Camera detected. Click Start camera to test scanning.");
-    } catch (error) {
-      status("Camera detection failed: " + error.name + ": " + error.message);
+            processingScan = true;
+            lastScannedText = decodedText;
+
+            resultBox.textContent =
+              "QR detected:\n" + decodedText;
+
+            if (window.opener && !window.opener.closed) {
+              window.opener.postMessage(
+                {
+                  type: "ANDRADE_QR_SCANNED",
+                  qrData: decodedText
+                },
+                "*"
+              );
+
+              setStatus(
+                "QR detected and sent to the attendance app. Waiting for the next scan..."
+              );
+            } else {
+              setStatus(
+                "QR detected, but no attendance app window was found. Open this scanner from your attendance app."
+              );
+            }
+
+            // Prevent repeated detection of the same QR.
+            // Resume scanning after a short pause.
+            setTimeout(function () {
+              processingScan = false;
+              lastScannedText = "";
+            }, 1800);
+          },
+          function () {
+            // Ignore normal camera frames where no QR is found.
+          }
+        );
+
+        cameraRunning = true;
+        startButton.disabled = true;
+        stopButton.disabled = false;
+
+        setStatus("Camera is running. Point it at a student's QR code.");
+
+      } catch (error) {
+        cameraRunning = false;
+
+        setStatus(
+          "Could not start the camera. Allow camera access and use the HTTPS GitHub Pages address. " +
+          (error.message || error)
+        );
+
+        if (scanner) {
+          try {
+            await scanner.clear();
+          } catch (_) {}
+          scanner = null;
+        }
+
+        startButton.disabled = false;
+        stopButton.disabled = true;
+      }
     }
-  }
 
-  startButton.addEventListener("click", async () => {
-    if (running) return;
+    async function stopCamera() {
+      if (!scanner) return;
 
-    startButton.disabled = true;
+      try {
+        if (cameraRunning) {
+          await scanner.stop();
+        }
 
-    try {
-      scanner = new Html5Qrcode("reader");
+        await scanner.clear();
 
-      await scanner.start(
-        cameraSelect.value,
-        { fps: 10, qrbox: { width: 240, height: 240 } },
-        text => {
-          resultBox.textContent = "QR detected:\n" + text;
-          status("Camera works! QR detection succeeded.");
-        },
-        () => {}
-      );
+        setStatus("Camera stopped.");
+      } catch (error) {
+        setStatus("Camera stopped or already inactive.");
+      } finally {
+        scanner = null;
+        cameraRunning = false;
+        processingScan = false;
 
-      running = true;
-      stopButton.disabled = false;
-      status("Camera started. Point it at a QR code.");
-    } catch (error) {
-      scanner = null;
-      status("Camera failed: " + error.name + ": " + error.message);
-      startButton.disabled = false;
+        startButton.disabled = false;
+        stopButton.disabled = true;
+      }
     }
-  });
 
-  stopButton.addEventListener("click", async () => {
-    if (!scanner || !running) return;
+    startButton.addEventListener("click", startCamera);
+    stopButton.addEventListener("click", stopCamera);
 
-    try {
-      await scanner.stop();
-      await scanner.clear();
-      status("Camera stopped.");
-    } catch (error) {
-      status("Could not stop camera cleanly: " + error.message);
-    } finally {
-      scanner = null;
-      running = false;
-      startButton.disabled = false;
-      stopButton.disabled = true;
-    }
-  });
-
-  window.addEventListener("pagehide", () => {
-    if (scanner && running) scanner.stop().catch(() => {});
-  });
-
-  loadCameras();
-</script>
+    window.addEventListener("beforeunload", function () {
+      if (scanner && cameraRunning) {
+        scanner.stop().catch(function () {});
+      }
+    });
+  </script>
 </body>
 </html>
