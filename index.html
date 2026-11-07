@@ -1,387 +1,321 @@
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SHSLSG: ANDRADE — QR Scanner</title>
+/* =========================================================
+   SHSLSG: ANDRADE
+   GITHUB QR SCANNER — FIXED API CONNECTION
+========================================================= */
 
-  <script src="https://unpkg.com/html5-qrcode"></script>
+const SCRIPT_URL =
+  "https://script.google.com/a/macros/usa.edu.ph/s/AKfycbwimq8azYKwkKfk-6jE_NHeCstTH_QwGiMd_hD4nCn1XphL0D-6XcN71iKs_vxFLLjoTw/exec";
 
-  <style>
-    :root {
-      --pink: #d94f88;
-      --dark-pink: #b8326c;
-      --pale-pink: #fff0f6;
-      --border: #f0d5e1;
-      --text: #30232a;
-      --muted: #806b76;
-      --green: #14804a;
-      --red: #b42318;
-    }
+let scanner = null;
+let running = false;
+let submitting = false;
+let lastText = "";
+let lastTime = 0;
 
-    * { box-sizing: border-box; }
+const $ = id => document.getElementById(id);
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: #fff8fb;
-      color: var(--text);
-      font-family: Arial, sans-serif;
-    }
+/* STATUS */
 
-    header {
-      background: #632b45;
-      color: white;
-      padding: 22px 18px;
-      text-align: center;
-    }
+function setStatus(message, type = "") {
+  $("status").textContent = message;
+  $("status").className = type;
+}
 
-    header h1 {
-      font-size: 22px;
-      margin: 0;
-    }
+/* API CONNECTION */
 
-    header p {
-      margin: 7px 0 0;
-      font-size: 13px;
-      color: #f7dce8;
-    }
+function callApi(action, values = {}) {
+  return new Promise((resolve, reject) => {
 
-    main {
-      width: min(100% - 28px, 600px);
-      margin: 25px auto;
-    }
+    const callback =
+      "__andrade_cb_" +
+      Date.now() + "_" +
+      Math.random().toString(36).slice(2);
 
-    .panel {
-      padding: 20px;
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 18px #632b450b;
-    }
+    const params = new URLSearchParams({
+      api: "1",
+      action: action,
+      callback: callback,
+      ...values
+    });
 
-    h2 { margin-top: 0; }
+    const script = document.createElement("script");
 
-    label {
-      display: block;
-      margin: 14px 0 8px;
-      font-weight: bold;
-      font-size: 14px;
-    }
+    let finished = false;
 
-    input, select {
-      width: 100%;
-      padding: 13px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: white;
-      color: var(--text);
-      font-size: 16px;
-    }
+    const timeout = setTimeout(() => {
+      finish(
+        new Error(
+          "Apps Script request timed out. Check deployment access and URL."
+        )
+      );
+    }, 30000);
 
-    button {
-      width: 100%;
-      padding: 14px;
-      border: 0;
-      border-radius: 11px;
-      font-size: 15px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 12px;
-    }
+    function finish(error, result) {
+      if (finished) return;
 
-    .primary {
-      background: var(--pink);
-      color: white;
-    }
+      finished = true;
 
-    .primary:hover { background: var(--dark-pink); }
+      clearTimeout(timeout);
 
-    .secondary {
-      background: var(--pale-pink);
-      color: var(--dark-pink);
-    }
+      delete window[callback];
 
-    #reader {
-      width: 100%;
-      overflow: hidden;
-      border-radius: 12px;
-      margin-top: 15px;
-    }
+      script.remove();
 
-    #reader video {
-      border-radius: 12px;
-    }
-
-    #status {
-      padding: 14px;
-      margin-top: 15px;
-      border-radius: 11px;
-      background: var(--pale-pink);
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      line-height: 1.5;
-    }
-
-    .success {
-      background: #e6f7ed !important;
-      color: var(--green);
-    }
-
-    .error {
-      background: #fff0ef !important;
-      color: var(--red);
-    }
-
-    .muted {
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    footer {
-      padding: 20px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 12px;
-    }
-  </style>
-</head>
-
-<body>
-  <header>
-    <h1>SHSLSG: ANDRADE system</h1>
-    <p>Student QR attendance scanner</p>
-  </header>
-
-  <main>
-    <section class="panel">
-      <h2>Scan attendance QR</h2>
-      <p class="muted">
-        Select the event, allow camera access, and scan a student's
-        registered attendance QR code.
-      </p>
-
-      <label for="eventId">Event ID</label>
-      <input id="eventId" placeholder="Enter the event ID">
-
-      <button class="primary" id="startButton" onclick="startCamera()">
-        Start camera
-      </button>
-
-      <button class="secondary" onclick="stopCamera()">
-        Stop camera
-      </button>
-
-      <div id="reader"></div>
-
-      <div id="status" role="status" aria-live="polite">
-        Ready. Select an event before scanning.
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2>Manual QR check-in</h2>
-      <p class="muted">
-        Use this if the camera cannot read the code. Paste the QR data
-        generated by the attendance system.
-      </p>
-
-      <label for="qrData">Student QR data</label>
-      <input id="qrData" placeholder='{"type":"STUDENT_ATTENDANCE",...}'>
-
-      <button class="primary" onclick="submitAttendance()">
-        Record attendance
-      </button>
-    </section>
-  </main>
-
-  <footer>SHSLSG: ANDRADE system</footer>
-
-  <script>
-    // Your existing Google Apps Script deployment.
-    const SCRIPT_URL =
-      "https://script.google.com/a/macros/usa.edu.ph/s/AKfycbwimq8azYKwkKfk-6jE_NHeCstTH_QwGiMd_hD4nCn1XphL0D-6XcN71iKs_vxFLLjoTw/exec";
-
-    let scanner = null;
-    let running = false;
-    let submitting = false;
-    let lastText = "";
-    let lastTime = 0;
-
-    const $ = id => document.getElementById(id);
-
-    function setStatus(message, type = "") {
-      $("status").textContent = message;
-      $("status").className = type;
-    }
-
-    // JSONP connection. Requires the matching API handler in Code.gs.
-    function callApi(action, values = {}) {
-      return new Promise((resolve, reject) => {
-        const callback = "__andrade_cb_" +
-          Date.now() + "_" + Math.random().toString(36).slice(2);
-
-        const params = new URLSearchParams({
-          api: "1",
-          action,
-          callback,
-          ...values
-        });
-
-        const script = document.createElement("script");
-        let finished = false;
-
-        const timeout = setTimeout(() => {
-          finish(new Error("Request timed out. Check the Apps Script API deployment."));
-        }, 20000);
-
-        function finish(error, result) {
-          if (finished) return;
-          finished = true;
-          clearTimeout(timeout);
-          delete window[callback];
-          script.remove();
-
-          if (error) reject(error);
-          else if (!result || result.success === false) {
-            reject(new Error(result?.message || "Attendance request failed."));
-          } else resolve(result);
-        }
-
-        window[callback] = result => finish(null, result);
-        script.onerror = () => finish(
-          new Error("Cannot reach Apps Script. Check its API and access settings.")
-        );
-
-        script.src = SCRIPT_URL + "?" + params.toString();
-        document.head.appendChild(script);
-      });
-    }
-
-    async function startCamera() {
-      if (!$("eventId").value.trim()) {
-        setStatus("Please enter the event ID first.", "error");
+      if (error) {
+        reject(error);
         return;
       }
 
-      if (running) return;
-
-      if (typeof Html5Qrcode === "undefined") {
-        setStatus("The scanner library did not load. Check your internet connection.", "error");
+      if (!result || typeof result !== "object") {
+        reject(new Error("Invalid response from Apps Script."));
         return;
       }
 
-      try {
-        scanner = new Html5Qrcode("reader");
-
-        await scanner.start(
-          { facingMode: "environment" },
-          {
-            fps: 10,
-            qrbox: (width, height) => {
-              const size = Math.floor(Math.min(width, height) * 0.7);
-              return { width: size, height: size };
-            }
-          },
-          async text => {
-            const now = Date.now();
-            if (submitting) return;
-            if (text === lastText && now - lastTime < 4000) return;
-
-            lastText = text;
-            lastTime = now;
-            $("qrData").value = text;
-            await submitAttendance();
-          },
-          () => {}
-        );
-
-        running = true;
-        $("startButton").disabled = true;
-        setStatus("Camera is active. Point it at a student's QR code.");
-      } catch (error) {
-        scanner = null;
-        running = false;
-        $("startButton").disabled = false;
-        setStatus(
-          "Could not start the camera. Allow camera access and open GitHub Pages over HTTPS.\n" +
-          (error.message || ""),
-          "error"
-        );
-      }
+      // Resolve even unsuccessful API responses.
+      // This allows the scanner to identify duplicate check-ins.
+      resolve(result);
     }
 
-    async function stopCamera() {
-      if (scanner && running) {
-        try {
-          await scanner.stop();
-          await scanner.clear();
-        } catch (error) {}
+    window[callback] = function(result) {
+      finish(null, result);
+    };
 
-        scanner = null;
-        running = false;
-      }
+    script.onerror = function() {
+      finish(
+        new Error(
+          "Cannot reach Apps Script. Check your deployment URL, access settings, and JSONP API."
+        )
+      );
+    };
 
-      $("startButton").disabled = false;
-      setStatus("Camera stopped.");
-    }
+    script.src =
+      SCRIPT_URL + "?" + params.toString();
 
-    async function submitAttendance() {
-      if (submitting) return;
+    document.head.appendChild(script);
+  });
+}
 
-      const eventId = $("eventId").value.trim();
-      const qrData = $("qrData").value.trim();
+/* CAMERA */
 
-      if (!eventId) {
-        setStatus("Enter the event ID first.", "error");
-        return;
-      }
+async function startCamera() {
 
-      if (!qrData) {
-        setStatus("Scan or paste a student's QR data first.", "error");
-        return;
-      }
+  if (!$("eventId").value.trim()) {
+    setStatus("Please enter the event ID first.", "error");
+    return;
+  }
 
-      submitting = true;
-      setStatus("Sending attendance to Google Sheets...");
+  if (running) return;
 
-      try {
-        const result = await callApi("checkIn", {
-          eventId,
-          qrData,
-          recordedBy: "GitHub Camera Scanner"
-        });
+  if (typeof Html5Qrcode === "undefined") {
+    setStatus(
+      "Scanner library failed to load. Check your internet connection.",
+      "error"
+    );
+    return;
+  }
 
-        const person = result.participant || {};
+  try {
 
-        if (result.alreadyCheckedIn) {
-          setStatus(
-            "ALREADY CHECKED IN\n" +
-            (person.fullName || "") + "\n" +
-            (person.eventName || "") + "\n" +
-            (result.message || ""),
-            "error"
-          );
-        } else {
-          setStatus(
-            "ATTENDANCE RECORDED\n" +
-            (person.fullName || "") + "\n" +
-            "Event: " + (person.eventName || "") + "\n" +
-            "Time: " + (person.checkInTime || ""),
-            "success"
+    scanner = new Html5Qrcode("reader");
+
+    await scanner.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: (width, height) => {
+          const size = Math.floor(
+            Math.min(width, height) * 0.7
           );
 
-          $("qrData").value = "";
+          return {
+            width: size,
+            height: size
+          };
         }
-      } catch (error) {
-        setStatus("CHECK-IN FAILED\n" + error.message, "error");
-      } finally {
-        submitting = false;
-      }
+      },
+
+      async text => {
+
+        const now = Date.now();
+
+        if (submitting) return;
+
+        if (
+          text === lastText &&
+          now - lastTime < 4000
+        ) return;
+
+        lastText = text;
+        lastTime = now;
+
+        $("qrData").value = text;
+
+        await submitAttendance();
+      },
+
+      () => {}
+    );
+
+    running = true;
+
+    $("startButton").disabled = true;
+
+    setStatus(
+      "Camera active. Point it at a student's QR code."
+    );
+
+  } catch (error) {
+
+    scanner = null;
+    running = false;
+
+    $("startButton").disabled = false;
+
+    setStatus(
+      "Could not start camera.\n" +
+      (error.message || String(error)),
+      "error"
+    );
+  }
+}
+
+/* STOP CAMERA */
+
+async function stopCamera() {
+
+  if (scanner && running) {
+
+    try {
+      await scanner.stop();
+      await scanner.clear();
+    } catch (error) {
+      console.warn(error);
     }
-  </script>
-</body>
-</html>
+
+    scanner = null;
+    running = false;
+  }
+
+  $("startButton").disabled = false;
+
+  setStatus("Camera stopped.");
+}
+
+/* ATTENDANCE SUBMISSION */
+
+async function submitAttendance() {
+
+  if (submitting) return;
+
+  const eventId = $("eventId").value.trim();
+  const qrData = $("qrData").value.trim();
+
+  if (!eventId) {
+    setStatus("Enter the event ID first.", "error");
+    return;
+  }
+
+  if (!qrData) {
+    setStatus(
+      "Scan or paste a student's QR data first.",
+      "error"
+    );
+    return;
+  }
+
+  submitting = true;
+
+  setStatus(
+    "Sending attendance to Google Sheets..."
+  );
+
+  try {
+
+    const result = await callApi("checkIn", {
+      eventId: eventId,
+      qrData: qrData,
+      recordedBy: "GitHub Camera Scanner"
+    });
+
+    const name =
+      typeof result.participant === "string"
+        ? result.participant
+        : result.participant?.fullName ||
+          result.fullName ||
+          "Student";
+
+    const eventName =
+      result.event ||
+      result.eventName ||
+      result.participant?.eventName ||
+      eventId;
+
+    const time =
+      result.timestamp ||
+      result.checkInTime ||
+      result.participant?.checkInTime ||
+      "";
+
+    // Duplicate check-in
+    if (
+      result.duplicate === true ||
+      result.alreadyCheckedIn === true
+    ) {
+
+      setStatus(
+        "ALREADY CHECKED IN\n\n" +
+        name + "\n" +
+        "Event: " + eventName + "\n" +
+        (result.message || "Attendance was already recorded."),
+        "error"
+      );
+
+      return;
+    }
+
+    // Other backend errors
+    if (result.success !== true) {
+      throw new Error(
+        result.message || "Attendance could not be recorded."
+      );
+    }
+
+    // Determine attendance classification.
+    const attendanceStatus =
+      result.attendanceStatus ||
+      result.status ||
+      "Present";
+
+    const isLate =
+      String(attendanceStatus).toLowerCase() === "late";
+
+    setStatus(
+      (isLate
+        ? "ATTENDANCE RECORDED — LATE"
+        : "ATTENDANCE RECORDED — PRESENT") +
+      "\n\n" +
+      name + "\n" +
+      "Event: " + eventName + "\n" +
+      "Status: " + attendanceStatus + "\n" +
+      "Time: " + (time || "Recorded successfully") +
+      "\n\n" +
+      (result.message || "Attendance successfully saved."),
+      "success"
+    );
+
+    $("qrData").value = "";
+
+  } catch (error) {
+
+    setStatus(
+      "CHECK-IN FAILED\n\n" +
+      (error.message || String(error)),
+      "error"
+    );
+
+  } finally {
+
+    submitting = false;
+  }
+}
