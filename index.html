@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -242,24 +241,15 @@ input:focus,select:focus {
    CONFIGURATION
 ========================================================= */
 
-/*
-  IMPORTANT:
-  Paste the CURRENT Web App URL from:
-  Apps Script > Deploy > Manage deployments > Web app.
+const SCRIPT_URL =
+  "https://script.google.com/a/macros/usa.edu.ph/s/AKfycbyCViPCQ2bsRdZg1sxgd8hcZtjp4LdkuQw8CJ3ek-y1rqAKoyAw5HaTkaumoeD4w1_CZQ/exec";
 
-  Use the URL ending in /exec.
-*/
-const SCRIPT_URL = "PASTE_YOUR_CURRENT_WEB_APP_URL_HERE";
-
-/*
-  Leave blank if CONFIG.API_KEY in Code.gs is blank.
-  A key placed in public GitHub HTML is NOT secret.
-*/
 const API_KEY = "";
 
 /* =========================================================
    STATE
 ========================================================= */
+
 let scanner = null;
 let scannerRunning = false;
 let cameraStarting = false;
@@ -273,6 +263,7 @@ const $ = id => document.getElementById(id);
 /* =========================================================
    NOTICES
 ========================================================= */
+
 function setNotice(id, message, type = "info") {
   const el = $(id);
   el.textContent = message;
@@ -295,16 +286,15 @@ function setConnection(connected, message) {
 /* =========================================================
    JSONP API
 ========================================================= */
+
 function callApi(action, values = {}) {
   return new Promise((resolve, reject) => {
     if (
       !SCRIPT_URL ||
-      SCRIPT_URL.includes("PASTE_YOUR_CURRENT") ||
-      !/^https:\/\/script\.google\.com\//i.test(SCRIPT_URL)
+      !/^https:\/\/script\.google\.com\//i.test(SCRIPT_URL) ||
+      !SCRIPT_URL.endsWith("/exec")
     ) {
-      reject(new Error(
-        "The Web App URL is missing or invalid. Paste the current /exec URL from Apps Script deployments."
-      ));
+      reject(new Error("The Apps Script Web App URL is invalid."));
       return;
     }
 
@@ -314,11 +304,14 @@ function callApi(action, values = {}) {
       Math.random().toString(36).slice(2);
 
     const params = new URLSearchParams();
+
     params.set("api", "1");
     params.set("action", action);
     params.set("callback", callback);
 
-    if (API_KEY) params.set("apiKey", API_KEY);
+    if (API_KEY) {
+      params.set("apiKey", API_KEY);
+    }
 
     Object.entries(values).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
@@ -331,19 +324,27 @@ function callApi(action, values = {}) {
 
     const timeout = setTimeout(() => {
       finish(new Error(
-        "Connection timed out. Check the Web App URL, deployment access, and whether the latest version is deployed."
+        "Connection timed out. Check the Web App URL, deployment access, and latest deployed version."
       ));
     }, 20000);
 
     function finish(error, result) {
       if (finished) return;
+
       finished = true;
       clearTimeout(timeout);
-      try { delete window[callback]; } catch (_) {}
+
+      try {
+        delete window[callback];
+      } catch (_) {}
+
       script.remove();
 
-      if (error) reject(error);
-      else resolve(result);
+      if (error) {
+        reject(error);
+      } else {
+        resolve(result);
+      }
     }
 
     window[callback] = result => {
@@ -351,17 +352,18 @@ function callApi(action, values = {}) {
         finish(new Error("The Apps Script API returned an invalid response."));
         return;
       }
+
       finish(null, result);
     };
 
     script.onerror = () => {
       finish(new Error(
-        "The browser could not load the Apps Script response. The deployment may be inaccessible, outdated, or require a school account login."
+        "The browser could not load the Apps Script response. Check deployment access and school account permissions."
       ));
     };
 
     script.src =
-      SCRIPT_URL.replace(/\/+$/, "") +
+      SCRIPT_URL +
       "?" + params.toString();
 
     script.async = true;
@@ -372,24 +374,30 @@ function callApi(action, values = {}) {
 /* =========================================================
    CONNECTION TEST
 ========================================================= */
+
 async function testConnection() {
   const button = $("testConnectionButton");
+
   button.disabled = true;
   button.textContent = "Connecting...";
 
   try {
-    const result = await callApi("ping");
+    /*
+      IMPORTANT:
+      The current Code.gs supports testDatabaseConnection.
+      It does not use the ping action.
+    */
+    const result = await callApi("testDatabaseConnection");
 
     if (!result.success) {
-      throw new Error(result.message || "API connection failed.");
+      throw new Error(result.message || "Database connection failed.");
     }
 
     setConnection(true, "Connected to ANDRADE API");
 
     setNotice(
       "connectionNotice",
-      result.message +
-      (result.serverTime ? "\nServer time: " + result.serverTime : ""),
+      result.message || "Successfully connected to the ANDRADE database.",
       "success"
     );
 
@@ -397,7 +405,13 @@ async function testConnection() {
 
   } catch (error) {
     setConnection(false, "Not connected to ANDRADE database");
-    setNotice("connectionNotice", error.message, "error");
+
+    setNotice(
+      "connectionNotice",
+      error.message || "Unable to connect to the database.",
+      "error"
+    );
+
     return false;
 
   } finally {
@@ -409,6 +423,7 @@ async function testConnection() {
 /* =========================================================
    EVENT LOADING
 ========================================================= */
+
 async function loadEvents() {
   const select = $("eventId");
   const button = $("refreshEventsButton");
@@ -424,21 +439,25 @@ async function loadEvents() {
       throw new Error(result.message || "Unable to retrieve events.");
     }
 
-    const events = Array.isArray(result.events) ? result.events : [];
+    const events = Array.isArray(result.events)
+      ? result.events
+      : [];
 
     select.innerHTML = '<option value="">Select an event</option>';
 
     events.forEach(event => {
       const option = document.createElement("option");
+
       option.value = event.id;
       option.textContent =
         (event.name || "Unnamed event") +
         " — " + (event.date || "No date") +
         " — " + (event.status || "Active");
+
       select.appendChild(option);
     });
 
-    if (events.some(event => event.id === previous)) {
+    if (events.some(event => String(event.id) === String(previous))) {
       select.value = previous;
     }
 
@@ -453,8 +472,14 @@ async function loadEvents() {
     }
 
   } catch (error) {
-    select.innerHTML = '<option value="">Unable to load events</option>';
-    setNotice("scannerNotice", "Event loading failed: " + error.message, "error");
+    select.innerHTML =
+      '<option value="">Unable to load events</option>';
+
+    setNotice(
+      "scannerNotice",
+      "Event loading failed: " + error.message,
+      "error"
+    );
 
   } finally {
     button.disabled = false;
@@ -464,14 +489,20 @@ async function loadEvents() {
 /* =========================================================
    QR VALIDATION
 ========================================================= */
+
 function validateQrData(text) {
-  if (!text) throw new Error("QR code is empty.");
+  if (!text) {
+    throw new Error("QR code is empty.");
+  }
 
   let data;
+
   try {
     data = JSON.parse(text);
   } catch (_) {
-    throw new Error("Invalid student QR code. The QR must contain JSON data.");
+    throw new Error(
+      "Invalid student QR code. The QR must contain JSON data."
+    );
   }
 
   if (!data || typeof data !== "object" || Array.isArray(data)) {
@@ -492,6 +523,7 @@ function validateQrData(text) {
 /* =========================================================
    CAMERA START
 ========================================================= */
+
 async function startCamera() {
   if (scannerRunning || cameraStarting || submitting) return;
 
@@ -537,7 +569,9 @@ async function startCamera() {
   );
 
   try {
-    if (!scanner) scanner = new Html5Qrcode("reader");
+    if (!scanner) {
+      scanner = new Html5Qrcode("reader");
+    }
 
     await scanner.start(
       { facingMode: "environment" },
@@ -554,7 +588,10 @@ async function startCamera() {
 
         const now = Date.now();
 
-        if (decodedText === lastText && now - lastTime < 4000) {
+        if (
+          decodedText === lastText &&
+          now - lastTime < 4000
+        ) {
           return;
         }
 
@@ -568,6 +605,7 @@ async function startCamera() {
     );
 
     scannerRunning = true;
+
     $("startButton").disabled = true;
     $("stopButton").disabled = false;
 
@@ -580,6 +618,7 @@ async function startCamera() {
   } catch (error) {
     scanner = null;
     scannerRunning = false;
+
     $("startButton").disabled = false;
     $("stopButton").disabled = true;
 
@@ -599,12 +638,17 @@ async function startCamera() {
 /* =========================================================
    CAMERA STOP
 ========================================================= */
+
 async function stopCamera() {
   if (!scanner) return;
 
   try {
-    if (scannerRunning) await scanner.stop();
+    if (scannerRunning) {
+      await scanner.stop();
+    }
+
     await scanner.clear();
+
   } catch (error) {
     console.warn("Camera stop warning:", error);
   }
@@ -622,6 +666,7 @@ async function stopCamera() {
 /* =========================================================
    ATTENDANCE SUBMISSION
 ========================================================= */
+
 async function submitAttendance() {
   if (submitting) return;
 
@@ -634,7 +679,11 @@ async function submitAttendance() {
   }
 
   if (!qrData) {
-    setNotice("resultNotice", "Scan or paste a student's QR data first.", "error");
+    setNotice(
+      "resultNotice",
+      "Scan or paste a student's QR data first.",
+      "error"
+    );
     return;
   }
 
@@ -655,6 +704,7 @@ async function submitAttendance() {
   }
 
   submitting = true;
+
   $("manualButton").disabled = true;
   $("startButton").disabled = true;
 
@@ -672,10 +722,13 @@ async function submitAttendance() {
     });
 
     if (!result.success) {
-      throw new Error(result.message || "Attendance could not be recorded.");
+      throw new Error(
+        result.message || "Attendance could not be recorded."
+      );
     }
 
     showAttendanceResult(result);
+
     $("qrData").value = "";
 
     if (result.alreadyCheckedIn) {
@@ -684,6 +737,7 @@ async function submitAttendance() {
         "DUPLICATE CHECK-IN: This student has already checked in for this event. No additional record was created.",
         "info"
       );
+
     } else {
       const status =
         result.participant && result.participant.status
@@ -702,10 +756,15 @@ async function submitAttendance() {
     setConnection(true, "Connected to ANDRADE database");
 
   } catch (error) {
-    setNotice("resultNotice", error.message, "error");
+    setNotice(
+      "resultNotice",
+      error.message || "Attendance submission failed.",
+      "error"
+    );
 
   } finally {
     submitting = false;
+
     $("manualButton").disabled = false;
     $("startButton").disabled = scannerRunning;
   }
@@ -714,13 +773,21 @@ async function submitAttendance() {
 /* =========================================================
    DISPLAY RESULT
 ========================================================= */
+
 function showAttendanceResult(result) {
   const person = result.participant || {};
 
   $("attendanceResult").classList.remove("hidden");
-  $("resultName").textContent = person.fullName || "Unknown student";
-  $("resultStudentId").textContent = person.studentId || "—";
-  $("resultEvent").textContent = person.eventName || "—";
+
+  $("resultName").textContent =
+    person.fullName || "Unknown student";
+
+  $("resultStudentId").textContent =
+    person.studentId || "—";
+
+  $("resultEvent").textContent =
+    person.eventName || "—";
+
   $("resultTime").textContent =
     person.checkInTime || person.timestamp || "—";
 
@@ -728,12 +795,21 @@ function showAttendanceResult(result) {
   const duplicate = !!result.alreadyCheckedIn;
 
   const badge = document.createElement("span");
+
   badge.className =
     "badge " +
-    (duplicate ? "duplicate" : status === "Late" ? "late" : "present");
+    (
+      duplicate
+        ? "duplicate"
+        : status === "Late"
+          ? "late"
+          : "present"
+    );
 
   badge.textContent =
-    duplicate ? "ALREADY CHECKED IN" : status.toUpperCase();
+    duplicate
+      ? "ALREADY CHECKED IN"
+      : status.toUpperCase();
 
   $("resultStatus").replaceChildren(badge);
 }
@@ -741,6 +817,7 @@ function showAttendanceResult(result) {
 /* =========================================================
    INITIALIZATION
 ========================================================= */
+
 async function initializeScanner() {
   setConnection(false, "Connecting to ANDRADE API...");
 
@@ -748,6 +825,7 @@ async function initializeScanner() {
 
   if (connected) {
     await loadEvents();
+
   } else {
     $("eventId").innerHTML =
       '<option value="">Database connection unavailable</option>';
@@ -760,7 +838,11 @@ async function initializeScanner() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", initializeScanner);
+document.addEventListener(
+  "DOMContentLoaded",
+  initializeScanner
+);
 </script>
+
 </body>
 </html>
