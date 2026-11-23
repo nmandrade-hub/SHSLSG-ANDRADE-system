@@ -1,1 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#632b45">
+<title>SHSLSG: ANDRADE System</title>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<style>
+:root{--wine:#632b45;--pink:#d94f88;--pale:#fff0f5;--ink:#29232a;--muted:#786d75;--line:#eee3e9;--bg:#f8f5f7;--white:#fff;--green:#16845b;--red:#c43d56;--shadow:0 8px 28px rgba(65,28,48,.07)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{min-height:100vh}
+.topbar{height:70px;background:var(--wine);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 26px;position:sticky;top:0;z-index:10;box-shadow:0 3px 16px #32132122}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.2px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:#ffffff20;display:grid;place-items:center;font-size:19px}
+.brand small{display:block;font-size:10px;letter-spacing:1.4px;font-weight:500;opacity:.75}
+.top-right{font-size:12px;opacity:.9}
+.layout{display:grid;grid-template-columns:230px minmax(0,1fr);max-width:1600px;margin:auto}
+.sidebar{padding:24px 14px;border-right:1px solid var(--line);min-height:calc(100vh - 70px);background:#fff}
+.nav-label{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#a99aa2;padding:8px 12px}
+.nav{width:100%;border:0;background:transparent;text-align:left;padding:11px 13px;border-radius:10px;color:#655963;margin:2px 0;display:flex;align-items:center;gap:11px;font-weight:650}
+.nav:hover,.nav.active{background:var(--pale);color:var(--wine)}
+.nav .ico{width:20px;text-align:center;font-size:17px}
+.main{padding:30px;min-width:0}
+.page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:24px}
+.page-head h1{margin:0;color:var(--wine);font-size:27px;letter-spacing:-.7px}
+.page-head p{margin:5px 0 0;color:var(--muted);font-size:13px}
+.btn{border:0;border-radius:9px;padding:10px 15px;font-weight:700;background:var(--wine);color:#fff;box-shadow:0 3px 8px #632b4520}
+.btn:hover{filter:brightness(1.08)}
+.btn.secondary{background:#f4e8ee;color:var(--wine);box-shadow:none}
+.btn.danger{background:#fff0f1;color:var(--red);box-shadow:none}
+.btn.small{padding:7px 10px;font-size:12px}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-bottom:22px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.stat-top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;font-weight:700}
+.stat-icon{width:34px;height:34px;border-radius:10px;background:var(--pale);display:grid;place-items:center;font-size:17px}
+.stat strong{display:block;font-size:28px;color:var(--wine);margin-top:8px}
+.stat .sub{font-size:11px;color:#9b8e96}
+.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);margin-bottom:18px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:15px}
+.panel h2{font-size:16px;color:var(--wine);margin:0}
+.muted{color:var(--muted)}
+.table-wrap{overflow:auto}
+table{border-collapse:collapse;width:100%;min-width:650px}
+th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:middle}
+th{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#988993;background:#fdfbfc}
+td{color:#514750}
+tr:last-child td{border-bottom:0}
+.pill{display:inline-block;padding:4px 8px;border-radius:99px;font-size:10px;font-weight:800;background:#f3edf0;color:#66545e}
+.pill.active,.pill.present{background:#e7f6ef;color:#16845b}
+.pill.late{background:#fff2df;color:#a96916}
+.pill.absent{background:#fff0f1;color:#c43d56}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+.field label{font-size:11px;font-weight:800;color:#665963}
+.field input,.field select,.field textarea,.toolbar input,.toolbar select{width:100%;border:1px solid #e6dce2;border-radius:8px;padding:10px 11px;background:#fff;color:var(--ink);outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--pink);box-shadow:0 0 0 3px #d94f8818}
+.field textarea{min-height:75px;resize:vertical}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px}
+.toolbar input{max-width:280px}
+.toolbar select{max-width:210px}
+.empty{text-align:center;padding:35px;color:#9b8e96;font-size:13px}
+.notice{padding:11px 13px;border-radius:9px;background:#fff5e8;color:#895c21;font-size:12px;margin-bottom:14px}
+.success{background:#eaf7f0;color:#16744f}
+.error{background:#fff0f1;color:#b52f4a}
+.hidden{display:none!important}
+.modal-backdrop{position:fixed;inset:0;background:#24121dcc;display:grid;place-items:center;padding:18px;z-index:30}
+.modal{background:#fff;border-radius:16px;padding:22px;width:min(560px,100%);max-height:90vh;overflow:auto;box-shadow:0 20px 80px #160a1280}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-head h2{margin:0;color:var(--wine);font-size:19px}
+.close{border:0;background:#f5edf1;border-radius:8px;width:32px;height:32px;font-size:18px;color:var(--wine)}
+.qr-card{border:1px solid var(--line);border-radius:14px;padding:22px;text-align:center;width:min(340px,100%);margin:15px auto;background:#fff}
+.qr-card h3{color:var(--wine);margin:0 0 3px}
+.qr-card p{margin:3px 0;color:var(--muted);font-size:12px}
+.qr-holder{display:flex;justify-content:center;padding:16px}
+.qr-holder img,.qr-holder canvas{max-width:100%}
+.qr-id{font-size:10px;color:#9b8e96;word-break:break-all}
+.connection{font-size:11px;display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:#e4a33b}
+.dot.online{background:#35a878}
+.footer-note{text-align:center;color:#a4979f;font-size:10px;padding:16px}
+.progress{height:8px;background:#f2e9ee;border-radius:20px;overflow:hidden;margin-top:9px}
+.progress span{display:block;height:100%;background:var(--pink);border-radius:20px}
+.mobile-menu{display:none}
+.scanner-box{max-width:560px;margin:14px auto 0;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
+.scanner-box #qr-reader{width:100%;min-height:220px}
+.scanner-box #qr-reader video{border-radius:8px}
+.scanner-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+
+@media(max-width:900px){
+.cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+.layout{grid-template-columns:190px minmax(0,1fr)}
+.main{padding:22px}
+}
+@media(max-width:650px){
+.topbar{height:60px;padding:0 15px}
+.top-right{display:none}
+.layout{display:block}
+.sidebar{position:fixed;z-index:20;left:0;top:60px;bottom:0;width:245px;transform:translateX(-105%);transition:.2s;box-shadow:8px 0 30px #0002}
+.sidebar.open{transform:translateX(0)}
+.mobile-menu{display:inline-grid;place-items:center;border:0;background:#ffffff20;color:white;border-radius:8px;width:35px;height:35px;font-size:19px}
+.brand{margin-right:auto;margin-left:10px}
+.main{padding:20px 14px}
+.page-head h1{font-size:23px}
+.page-head{align-items:center}
+.cards{gap:9px}
+.stat{padding:13px}
+.stat strong{font-size:23px}
+.stat-top{font-size:10px}
+.form-grid{grid-template-columns:1fr}
+.field.full{grid-column:auto}
+.panel{padding:15px}
+.toolbar input,.toolbar select{max-width:none;flex:1 1 130px}
+}
+@media print{
+body{background:#fff}
+.topbar,.sidebar,.page-head,.no-print{display:none!important}
+.layout{display:block}
+.main{padding:0}
+.qr-card{box-shadow:none;border:1px solid #ddd}
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+<header class="topbar">
+<button class="mobile-menu" onclick="toggleMenu()">☰</button>
+<div class="brand">
+<div class="brand-mark">✦</div>
+<div>SHSLSG: ANDRADE SYSTEM<small>STUDENT ATTENDANCE MANAGEMENT</small></div>
+</div>
+<div class="top-right">University of San Agustin · Senior High School</div>
+</header>
+
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+<div class="nav-label">WORKSPACE</div>
+<button class="nav active" data-page="dashboard" onclick="showPage('dashboard')"><span class="ico">▦</span> Dashboard</button>
+<button class="nav" data-page="events" onclick="showPage('events')"><span class="ico">▣</span> Events</button>
+<button class="nav" data-page="students" onclick="showPage('students')"><span class="ico">♙</span> Students</button>
+<button class="nav" data-page="attendance" onclick="showPage('attendance')"><span class="ico">▤</span> Attendance & Scanner</button>
+<button class="nav" data-page="reports" onclick="showPage('reports')"><span class="ico">▥</span> Reports</button>
+<div class="nav-label" style="margin-top:22px">SYSTEM</div>
+<button class="nav" data-page="settings" onclick="showPage('settings')"><span class="ico">⚙</span> Connection</button>
+<div class="footer-note">SHSLSG · ANDRADE SYSTEM<br>Version 4.2 backend</div>
+</aside>
+
+<main class="main">
+
+<section id="page-dashboard" class="page">
+<div class="page-head">
+<div><h1>Dashboard</h1><p>Overview of your student attendance system.</p></div>
+<button class="btn" onclick="refreshDashboard()">↻ Refresh</button>
+</div>
+<div class="cards">
+<div class="stat"><div class="stat-top">TOTAL EVENTS <span class="stat-icon">▣</span></div><strong id="stat-events">—</strong><div class="sub">Events in the database</div></div>
+<div class="stat"><div class="stat-top">REGISTERED STUDENTS <span class="stat-icon">♙</span></div><strong id="stat-students">—</strong><div class="sub">Permanent student records</div></div>
+<div class="stat"><div class="stat-top">CHECKED IN <span class="stat-icon">✓</span></div><strong id="stat-checked">—</strong><div class="sub">Unique attendance records</div></div>
+<div class="stat"><div class="stat-top">ATTENDANCE RATE <span class="stat-icon">％</span></div><strong id="stat-rate">—%</strong><div class="sub">Based on registered students</div></div>
+</div>
+<div class="panel">
+<div class="panel-head"><h2>Attendance Overview</h2><span class="muted" style="font-size:11px">All events</span></div>
+<div style="display:flex;gap:28px;flex-wrap:wrap">
+<div><div class="muted" style="font-size:11px">Present</div><strong id="stat-present" style="font-size:25px;color:var(--green)">—</strong></div>
+<div><div class="muted" style="font-size:11px">Late</div><strong id="stat-late" style="font-size:25px;color:#b7791f">—</strong></div>
+<div><div class="muted" style="font-size:11px">Absent</div><strong id="stat-absent" style="font-size:25px;color:var(--red)">—</strong></div>
+</div>
+<div class="progress"><span id="rate-bar" style="width:0%"></span></div>
+</div>
+<div class="panel">
+<div class="panel-head"><h2>Recent Attendance</h2><button class="btn secondary small" onclick="showPage('attendance')">Open Scanner</button></div>
+<div class="table-wrap"><table><thead><tr><th>Student</th><th>Event</th><th>Check-in time</th><th>Status</th></tr></thead><tbody id="recent-body"><tr><td colspan="4" class="empty">Loading records…</td></tr></tbody></table></div>
+</div>
+</section>
+
+<section id="page-events" class="page hidden">
+<div class="page-head"><div><h1>Events</h1><p>Create and manage attendance events.</p></div><button class="btn" onclick="openEventModal()">＋ Create Event</button></div>
+<div class="panel">
+<div class="toolbar"><input id="event-search" placeholder="Search events…" oninput="renderEvents()"></div>
+<div class="table-wrap"><table><thead><tr><th>Event</th><th>Date</th><th>Start</th><th>Late cutoff</th><th>Venue</th><th>Status</th><th>Actions</th></tr></thead><tbody id="events-body"></tbody></table></div>
+</div>
+</section>
+
+<section id="page-students" class="page hidden">
+<div class="page-head"><div><h1>Students</h1><p>Manage student records and permanent QR codes.</p></div><button class="btn" onclick="openStudentModal()">＋ Register Student</button></div>
+<div class="panel">
+<div class="toolbar">
+<input id="student-search" placeholder="Search name, ID, or section…" oninput="renderStudents()">
+<select id="grade-filter" onchange="renderStudents()"><option value="">All grade levels</option><option>Grade 11</option><option>Grade 12</option></select>
+<button class="btn secondary small" onclick="exportStudents()">Export CSV</button>
+</div>
+<div class="table-wrap"><table><thead><tr><th>Student ID</th><th>Full name</th><th>Grade</th><th>Section</th><th>Email</th><th>QR / Actions</th></tr></thead><tbody id="students-body"></tbody></table></div>
+</div>
+</section>
+
+<section id="page-attendance" class="page hidden">
+<div class="page-head"><div><h1>Attendance Scanner</h1><p>Scan student QR codes and record attendance.</p></div></div>
+<div class="panel">
+<div class="notice">Select an event and start the camera. The scanner reads the student's permanent QR code and submits it to your Apps Script backend. Camera access requires HTTPS (GitHub Pages) and permission from your browser.</div>
+<div class="form-grid">
+<div class="field"><label>SELECT EVENT</label><select id="check-event"></select></div>
+<div class="field"><label>RECORDED BY</label><input id="recorded-by" placeholder="Name of authorized personnel"></div>
+<div class="field full"><label>QR DATA (MANUAL BACKUP)</label><textarea id="qr-data" placeholder='Paste QR content here if camera scanning is unavailable'></textarea></div>
+</div>
+<div class="scanner-box">
+<div id="qr-reader"></div>
+<div class="scanner-actions">
+<button class="btn" id="start-scan-btn" onclick="startScanner()">Start Camera Scanner</button>
+<button class="btn secondary" id="stop-scan-btn" onclick="stopScanner()" disabled>Stop Scanner</button>
+<button class="btn secondary" onclick="submitCheckIn()">Submit Manually</button>
+</div>
+<p id="scanner-status" class="muted" style="font-size:12px;text-align:center;margin:12px 0 0">Camera is stopped.</p>
+</div>
+<div id="check-result" style="margin-top:14px"></div>
+</div>
+</section>
+
+<section id="page-reports" class="page hidden">
+<div class="page-head"><div><h1>Reports</h1><p>View and export attendance for a selected event.</p></div></div>
+<div class="panel">
+<div class="toolbar">
+<select id="report-event" onchange="loadReport()"><option value="">Select an event</option></select>
+<button class="btn secondary small" onclick="exportReport()">Export CSV</button>
+</div>
+<div class="table-wrap"><table><thead><tr><th>Student ID</th><th>Student name</th><th>Grade</th><th>Section</th><th>Status</th><th>Check-in time</th><th>Recorded by</th></tr></thead><tbody id="report-body"><tr><td colspan="7" class="empty">Choose an event to view its report.</td></tr></tbody></table></div>
+</div>
+</section>
+
+<section id="page-settings" class="page hidden">
+<div class="page-head"><div><h1>Connection</h1><p>Connect this GitHub Pages frontend to your Apps Script web app.</p></div></div>
+<div class="panel">
+<h2 style="margin-bottom:14px">Google Apps Script API</h2>
+<div class="notice">Paste the deployed Web App URL ending in <b>/exec</b>. Do not paste the Apps Script editor URL.</div>
+<div class="field"><label>WEB APP URL</label><input id="api-url" placeholder="https://script.google.com/macros/s/DEPLOYMENT_ID/exec"></div>
+<div class="form-actions" style="justify-content:flex-start">
+<button class="btn" onclick="saveApiUrl()">Save URL</button>
+<button class="btn secondary" onclick="testConnection()">Test Connection</button>
+</div>
+<div id="connection-result" style="margin-top:14px"></div>
+<div style="margin-top:20px;border-top:1px solid var(--line);padding-top:16px">
+<h2>Backend compatibility</h2>
+<p class="muted" style="font-size:12px">This frontend uses the Version 4.2 JSONP GET API. Keep your Apps Script deployment active and set access according to your school's authorization requirements.</p>
+<p class="muted" style="font-size:12px">Student records and attendance are stored in your Google Sheets database. Do not share the Web App URL with people who should not have access to the system.</p>
+</div>
+</div>
+</section>
+
+</main>
+</div>
+</div>
+
+<div id="modal-root"></div>
+
+<script>
+const DEFAULT_API_URL = '';
+
+let API_URL = localStorage.getItem('andrade_api_url') || DEFAULT_API_URL;
+let events = [];
+let students = [];
+let dashboard = null;
+let reportRows = [];
+let qrScanner = null;
+let scannerRunning = false;
+let scanSubmitting = false;
+
+const $ = id => document.getElementById(id);
+
+function toggleMenu(){
+  $('sidebar').classList.toggle('open');
+}
+
+function showPage(page){
+  document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));
+  $('page-'+page).classList.remove('hidden');
+
+  document.querySelectorAll('.nav').forEach(x=>{
+    x.classList.toggle('active',x.dataset.page===page);
+  });
+
+  $('sidebar').classList.remove('open');
+
+  if(page==='dashboard') refreshDashboard();
+  if(page==='events') loadEvents();
+  if(page==='students') loadStudents();
+  if(page==='reports') populateEventSelects();
+  if(page==='attendance') populateEventSelects();
+}
+
+function api(action,data={}){
+  return new Promise((resolve,reject)=>{
+    if(!API_URL){
+      reject(new Error('Add your deployed Apps Script Web App URL in Connection first.'));
+      return;
+    }
+
+    let url;
+    try{
+      url=new URL(API_URL);
+    }catch(e){
+      reject(new Error('The Web App URL is invalid.'));
+      return;
+    }
+
+    url.searchParams.set('api','1');
+    url.searchParams.set('action',action);
+
+    if(data && Object.keys(data).length){
+      url.searchParams.set('data',JSON.stringify(data));
+    }
+
+    if(data.eventId) url.searchParams.set('eventId',data.eventId);
+    if(data.participantId) url.searchParams.set('participantId',data.participantId);
+
+    const callback='andradeCallback_'+Date.now()+'_'+Math.floor(Math.random()*100000);
+    url.searchParams.set('callback',callback);
+
+    const script=document.createElement('script');
+    let finished=false;
+
+    const timer=setTimeout(()=>{
+      done(new Error('Request timed out. Check your deployment URL and internet connection.'));
+    },20000);
+
+    function done(err,result){
+      if(finished) return;
+      finished=true;
+      clearTimeout(timer);
+      delete window[callback];
+      script.remove();
+      err ? reject(err) : resolve(result);
+    }
+
+    window[callback]=result=>done(null,result);
+
+    script.onerror=()=>{
+      done(new Error('Could not reach the Apps Script API. Check that the Web App is deployed and accessible.'));
+    };
+
+    script.src=url.toString();
+    document.body.appendChild(script);
+  });
+}
+
+function saveApiUrl(){
+  API_URL=$('api-url').value.trim();
+  localStorage.setItem('andrade_api_url',API_URL);
+  showMessage('connection-result','Web App URL saved on this device.','success');
+}
+
+function showMessage(id,msg,type='success'){
+  const el=$(id);
+  if(el) el.innerHTML=`<div class="notice ${type}">${escapeHtml(msg)}</div>`;
+}
+
+function escapeHtml(v){
+  return String(v??'').replace(/[&<>"']/g,c=>({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[c]));
+}
+
+function fmtDate(v){
+  if(!v) return '—';
+  const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[2]}/${m[3]}/${m[1]}` : v;
+}
+
+async function testConnection(){
+  saveApiUrl();
+
+  try{
+    const r=await api('ping');
+
+    if(!r.success) throw new Error(r.message||'API returned an error.');
+
+    showMessage(
+      'connection-result',
+      `Connected successfully. ${r.message||''} Server time: ${r.serverTime||''} (${r.timezone||''}).`,
+      'success'
+    );
+
+    await loadBaseData();
+  }catch(e){
+    showMessage('connection-result',e.message,'error');
+  }
+}
+
+async function loadBaseData(){
+  try{
+    const [er,sr]=await Promise.all([
+      api('getEvents'),
+      api('getParticipants')
+    ]);
+
+    if(!er.success) throw new Error(er.message||'Could not load events.');
+    if(!sr.success) throw new Error(sr.message||'Could not load students.');
+
+    events=er.events||[];
+    students=sr.participants||[];
+
+    populateEventSelects();
+    renderEvents();
+    renderStudents();
+  }catch(e){
+    console.error(e);
+  }
+}
+
+async function refreshDashboard(){
+  try{
+    const r=await api('getDashboard');
+
+    if(!r.success) throw new Error(r.message||'Could not load dashboard.');
+
+    dashboard=r;
+
+    $('stat-events').textContent=r.totalEvents??0;
+    $('stat-students').textContent=r.totalRegistered??0;
+    $('stat-checked').textContent=r.totalCheckedIn??0;
+    $('stat-rate').textContent=(r.attendanceRate??0)+'%';
+
+    $('stat-present').textContent=r.totalPresent??0;
+    $('stat-late').textContent=r.totalLate??0;
+    $('stat-absent').textContent=r.totalAbsent??0;
+
+    $('rate-bar').style.width=Math.min(100,Math.max(0,r.attendanceRate||0))+'%';
+
+    const rows=r.recentAttendance||[];
+
+    $('recent-body').innerHTML=rows.length
+      ? rows.map(x=>`
+        <tr>
+          <td><b>${escapeHtml(x.fullName)}</b></td>
+          <td>${escapeHtml(x.eventName)}</td>
+          <td>${escapeHtml(x.checkInTime)}</td>
+          <td>${statusPill(x.status)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="4" class="empty">No attendance records yet.</td></tr>';
+
+  }catch(e){
+    $('recent-body').innerHTML=`<tr><td colspan="4" class="empty">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function statusPill(s){
+  const c=String(s||'').toLowerCase();
+  return `<span class="pill ${c}">${escapeHtml(s||'—')}</span>`;
+}
+
+async function loadEvents(){
+  try{
+    const r=await api('getEvents');
+
+    if(!r.success) throw new Error(r.message||'Could not load events.');
+
+    events=r.events||[];
+    renderEvents();
+    populateEventSelects();
+
+  }catch(e){
+    $('events-body').innerHTML=`<tr><td colspan="7" class="empty">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function renderEvents(){
+  const q=($('event-search')?.value||'').toLowerCase();
+
+  const list=events.filter(e=>
+    (e.name+' '+e.venue+' '+e.organizer).toLowerCase().includes(q)
+  );
+
+  $('events-body').innerHTML=list.length
+    ? list.map(e=>`
+      <tr>
+        <td><b>${escapeHtml(e.name)}</b><div class="muted">${escapeHtml(e.organizer||'')}</div></td>
+        <td>${fmtDate(e.date)}</td>
+        <td>${escapeHtml(e.time||'—')}</td>
+        <td>${escapeHtml(e.lateTime||'—')}</td>
+        <td>${escapeHtml(e.venue||'—')}</td>
+        <td>${statusPill(e.status||'Active')}</td>
+        <td>
+          <div class="actions">
+            <button class="btn secondary small" onclick="openEventModal('${e.id}')">Edit</button>
+            <button class="btn danger small" onclick="removeEvent('${e.id}')">Delete</button>
+          </div>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="7" class="empty">No events found.</td></tr>';
+}
+
+function openEventModal(id=''){
+  const e=events.find(x=>x.id===id)||{};
+
+  modal(`
+    <div class="modal-head">
+      <h2>${id?'Edit Event':'Create Event'}</h2>
+      <button class="close" onclick="closeModal()">×</button>
+    </div>
+
+    <form id="event-form">
+      <div class="form-grid">
+        <div class="field full">
+          <label>EVENT NAME *</label>
+          <input name="name" required value="${escapeHtml(e.name||'')}">
+        </div>
+
+        <div class="field">
+          <label>EVENT DATE *</label>
+          <input type="date" name="date" required value="${escapeHtml(e.date||'')}">
+        </div>
+
+        <div class="field">
+          <label>START TIME *</label>
+          <input type="time" name="time" required value="${escapeHtml(e.time||'')}">
+        </div>
+
+        <div class="field">
+          <label>LATE CUTOFF *</label>
+          <input type="time" name="lateTime" required value="${escapeHtml(e.lateTime||'')}">
+        </div>
+
+        <div class="field">
+          <label>VENUE</label>
+          <input name="venue" value="${escapeHtml(e.venue||'')}">
+        </div>
+
+        <div class="field full">
+          <label>ORGANIZER</label>
+          <input name="organizer" value="${escapeHtml(e.organizer||'')}">
+        </div>
+
+        <div class="field full">
+          <label>DESCRIPTION</label>
+          <textarea name="description">${escapeHtml(e.description||'')}</textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn">${id?'Save Changes':'Create Event'}</button>
+      </div>
+    </form>
+  `);
+
+  $('event-form').onsubmit=async ev=>{
+    ev.preventDefault();
+
+    const d=Object.fromEntries(new FormData(ev.target));
+
+    try{
+      const r=await api(
+        id?'updateEvent':'createEvent',
+        id?{...d,eventId:id}:d
+      );
+
+      if(!r.success) throw new Error(r.message||'Unable to save event.');
+
+      closeModal();
+      await loadEvents();
+      await refreshDashboard();
+
+      alert(r.message||'Saved successfully.');
+
+    }catch(err){
+      alert(err.message);
+    }
+  };
+}
+
+async function removeEvent(id){
+  const e=events.find(x=>x.id===id);
+
+  if(!confirm(`Delete “${e?.name||'this event'}” and its attendance records? This cannot be undone.`)) return;
+
+  try{
+    const r=await api('deleteEvent',{eventId:id});
+
+    if(!r.success) throw new Error(r.message||'Unable to delete event.');
+
+    await loadEvents();
+    await refreshDashboard();
+
+  }catch(err){
+    alert(err.message);
+  }
+}
+
+async function loadStudents(){
+  try{
+    const r=await api('getParticipants');
+
+    if(!r.success) throw new Error(r.message||'Could not load students.');
+
+    students=r.participants||[];
+    renderStudents();
+
+  }catch(e){
+    $('students-body').innerHTML=`<tr><td colspan="6" class="empty">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function renderStudents(){
+  const q=($('student-search')?.value||'').toLowerCase();
+  const g=$('grade-filter')?.value||'';
+
+  const list=students.filter(s=>
+    (!g||s.gradeLevel===g) &&
+    [s.studentId,s.fullName,s.section,s.email].join(' ').toLowerCase().includes(q)
+  );
+
+  $('students-body').innerHTML=list.length
+    ? list.map(s=>`
+      <tr>
+        <td><b>${escapeHtml(s.studentId)}</b></td>
+        <td>${escapeHtml(s.fullName)}</td>
+        <td>${escapeHtml(s.gradeLevel)}</td>
+        <td>${escapeHtml(s.section||'—')}</td>
+        <td>${escapeHtml(s.email||'—')}</td>
+        <td>
+          <div class="actions">
+            <button class="btn secondary small" onclick="showQr('${s.id}')">QR</button>
+            <button class="btn secondary small" onclick="openStudentModal('${s.id}')">Edit</button>
+            <button class="btn danger small" onclick="removeStudent('${s.id}')">Delete</button>
+          </div>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" class="empty">No students found.</td></tr>';
+}
+
+function openStudentModal(id=''){
+  const s=students.find(x=>x.id===id)||{};
+
+  modal(`
+    <div class="modal-head">
+      <h2>${id?'Edit Student':'Register Student'}</h2>
+      <button class="close" onclick="closeModal()">×</button>
+    </div>
+
+    <form id="student-form">
+      <div class="form-grid">
+        <div class="field">
+          <label>STUDENT ID ${id?'*':'(OPTIONAL)'}</label>
+          <input name="studentId" ${id?'required':''} value="${escapeHtml(s.studentId||'')}" placeholder="e.g. 2026-0001">
+        </div>
+
+        <div class="field">
+          <label>GRADE LEVEL *</label>
+          <select name="gradeLevel" required>
+            <option value="">Select grade</option>
+            <option ${s.gradeLevel==='Grade 11'?'selected':''}>Grade 11</option>
+            <option ${s.gradeLevel==='Grade 12'?'selected':''}>Grade 12</option>
+          </select>
+        </div>
+
+        <div class="field full">
+          <label>FULL NAME *</label>
+          <input name="fullName" required value="${escapeHtml(s.fullName||'')}">
+        </div>
+
+        <div class="field">
+          <label>SECTION</label>
+          <input name="section" value="${escapeHtml(s.section||'')}">
+        </div>
+
+        <div class="field">
+          <label>EMAIL</label>
+          <input type="email" name="email" value="${escapeHtml(s.email||'')}">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn">${id?'Save Changes':'Register Student'}</button>
+      </div>
+    </form>
+  `);
+
+  $('student-form').onsubmit=async ev=>{
+    ev.preventDefault();
+
+    const d=Object.fromEntries(new FormData(ev.target));
+
+    try{
+      const r=await api(
+        id?'updateParticipant':'addParticipant',
+        id?{...d,participantId:id}:d
+      );
+
+      if(!r.success) throw new Error(r.message||'Unable to save student.');
+
+      closeModal();
+      await loadStudents();
+      await refreshDashboard();
+
+      if(!id&&r.participant){
+        showQr(r.participant.id);
+      }else{
+        alert(r.message||'Student saved.');
+      }
+
+    }catch(err){
+      alert(err.message);
+    }
+  };
+}
+
+async function removeStudent(id){
+  const s=students.find(x=>x.id===id);
+
+  if(!confirm(`Delete ${s?.fullName||'this student'}? Related attendance records will also be deleted.`)) return;
+
+  try{
+    const r=await api('deleteParticipant',{participantId:id});
+
+    if(!r.success) throw new Error(r.message||'Unable to delete student.');
+
+    await loadStudents();
+    await refreshDashboard();
+
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+function showQr(id){
+  const s=students.find(x=>x.id===id);
+  if(!s) return;
+
+  modal(`
+    <div class="modal-head">
+      <h2>Student QR Code</h2>
+      <button class="close" onclick="closeModal()">×</button>
+    </div>
+
+    <div class="qr-card" id="qr-card">
+      <h3>SHSLSG: ANDRADE SYSTEM</h3>
+      <p>STUDENT ATTENDANCE PASS</p>
+      <div class="qr-holder" id="qr-holder"></div>
+      <h3>${escapeHtml(s.fullName)}</h3>
+      <p>${escapeHtml(s.gradeLevel)} · ${escapeHtml(s.section||'')}</p>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn secondary" onclick="downloadQrCard('${s.id}')">Download QR PNG</button>
+      <button class="btn" onclick="window.print()">Print</button>
+    </div>
+  `);
+
+  new QRCode($('qr-holder'),{
+    text:s.qrData||JSON.stringify({
+      type:'STUDENT_ATTENDANCE',
+      participantId:s.id,
+      studentId:s.studentId,
+      version:2
+    }),
+    width:190,
+    height:190,
+    colorDark:'#24151d',
+    colorLight:'#ffffff',
+    correctLevel:QRCode.CorrectLevel.H
+  });
+}
+
+function downloadQrCard(id){
+  const s=students.find(x=>x.id===id);
+  const canvas=$('qr-holder').querySelector('canvas');
+  const img=$('qr-holder').querySelector('img');
+  const src=canvas?canvas.toDataURL('image/png'):img?.src;
+
+  if(!src) return alert('QR code is not ready yet.');
+
+  const a=document.createElement('a');
+  a.href=src;
+  a.download=(s?.fullName||'student').replace(/[^\w-]+/g,'_')+'_QR_Code.png';
+  a.click();
+}
+
+function populateEventSelects(){
+  const opts=events.map(e=>
+    `<option value="${escapeHtml(e.id)}">${escapeHtml(e.name)} — ${fmtDate(e.date)}</option>`
+  ).join('');
+
+  if($('check-event')){
+    $('check-event').innerHTML=opts||'<option value="">No events available</option>';
+  }
+
+  if($('report-event')){
+    const old=$('report-event').value;
+    $('report-event').innerHTML='<option value="">Select an event</option>'+opts;
+    if(old) $('report-event').value=old;
+  }
+}
+
+/* ==========================================
+   QR CAMERA SCANNER
+========================================== */
+
+async function startScanner(){
+  if(scannerRunning) return;
+
+  if(!window.Html5Qrcode){
+    return showMessage(
+      'check-result',
+      'The QR scanner library did not load. Check your internet connection and reload the page.',
+      'error'
+    );
+  }
+
+  if(!$('check-event').value){
+    return showMessage(
+      'check-result',
+      'Please select an event before starting the scanner.',
+      'error'
+    );
+  }
+
+  try{
+    $('scanner-status').textContent='Requesting camera access…';
+    $('start-scan-btn').disabled=true;
+
+    qrScanner=new Html5Qrcode('qr-reader');
+
+    await qrScanner.start(
+      {facingMode:'environment'},
+      {
+        fps:10,
+        qrbox:{width:250,height:250},
+        aspectRatio:1.0
+      },
+      onQrDetected,
+      ()=>{}
+    );
+
+    scannerRunning=true;
+
+    $('scanner-status').textContent='Camera is active. Hold the student QR code inside the frame.';
+    $('stop-scan-btn').disabled=false;
+
+  }catch(e){
+    $('scanner-status').textContent='Unable to start camera.';
+    $('start-scan-btn').disabled=false;
+
+    showMessage(
+      'check-result',
+      'Camera could not start. Allow camera permission and open this site using HTTPS (GitHub Pages). '+(e.message||''),
+      'error'
+    );
+
+    qrScanner=null;
+  }
+}
+
+async function stopScanner(){
+  if(!qrScanner||!scannerRunning){
+    $('start-scan-btn').disabled=false;
+    $('stop-scan-btn').disabled=true;
+    return;
+  }
+
+  try{
+    await qrScanner.stop();
+    await qrScanner.clear();
+
+  }catch(e){
+    console.warn('Scanner stop:',e);
+
+  }finally{
+    qrScanner=null;
+    scannerRunning=false;
+    scanSubmitting=false;
+
+    $('scanner-status').textContent='Camera is stopped.';
+    $('start-scan-btn').disabled=false;
+    $('stop-scan-btn').disabled=true;
+  }
+}
+
+async function onQrDetected(decodedText){
+  if(scanSubmitting) return;
+
+  scanSubmitting=true;
+  $('qr-data').value=decodedText;
+
+  $('scanner-status').textContent='QR detected. Recording attendance…';
+
+  await stopScanner();
+  await submitCheckIn();
+
+  scanSubmitting=false;
+}
+
+async function submitCheckIn(){
+  const eventId=$('check-event').value;
+  const qrData=$('qr-data').value.trim();
+  const recordedBy=$('recorded-by').value.trim();
+
+  if(!eventId||!qrData){
+    return showMessage(
+      'check-result',
+      'Select an event and scan or paste the QR data.',
+      'error'
+    );
+  }
+
+  try{
+    const r=await api('checkIn',{
+      eventId,
+      qrData,
+      recordedBy
+    });
+
+    if(!r.success){
+      throw new Error(r.message||'Attendance could not be recorded.');
+    }
+
+    const p=r.participant||{};
+
+    $('check-result').innerHTML=`
+      <div class="notice ${r.alreadyCheckedIn?'':'success'}">
+        <b>${escapeHtml(r.message||'Attendance recorded.')}</b><br>
+        ${escapeHtml(p.fullName||'')} · ${escapeHtml(p.studentId||'')}<br>
+        ${escapeHtml(p.checkInTime||'')} · ${escapeHtml(p.status||'')}
+      </div>
+    `;
+
+    $('qr-data').value='';
+
+    $('scanner-status').textContent=r.alreadyCheckedIn
+      ? 'This student was already checked in.'
+      : 'Attendance successfully recorded. Ready for the next student.';
+
+    await refreshDashboard();
+
+  }catch(e){
+    showMessage('check-result',e.message,'error');
+
+    $('scanner-status').textContent=
+      'Scan was not recorded. You can retry the manual entry or start the camera again.';
+  }
+}
+
+async function loadReport(){
+  const id=$('report-event').value;
+
+  if(!id){
+    $('report-body').innerHTML='<tr><td colspan="7" class="empty">Choose an event to view its report.</td></tr>';
+    reportRows=[];
+    return;
+  }
+
+  try{
+    const r=await api('getReport',{eventId:id});
+
+    if(!r.success) throw new Error(r.message||'Could not load report.');
+
+    reportRows=r.report||[];
+
+    $('report-body').innerHTML=reportRows.length
+      ? reportRows.map(x=>`
+        <tr>
+          <td>${escapeHtml(x.studentId)}</td>
+          <td><b>${escapeHtml(x.fullName)}</b></td>
+          <td>${escapeHtml(x.gradeLevel)}</td>
+          <td>${escapeHtml(x.section)}</td>
+          <td>${statusPill(x.status)}</td>
+          <td>${escapeHtml(x.checkInTime||'—')}</td>
+          <td>${escapeHtml(x.recordedBy||'—')}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="7" class="empty">No students to report.</td></tr>';
+
+  }catch(e){
+    $('report-body').innerHTML=`<tr><td colspan="7" class="empty">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function csvDownload(filename,rows){
+  const csv=rows.map(r=>
+    r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')
+  ).join('\r\n');
+
+  const blob=new Blob(['\ufeff'+csv],{
+    type:'text/csv;charset=utf-8;'
+  });
+
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  a.click();
+
+  URL.revokeObjectURL(a.href);
+}
+
+function exportReport(){
+  if(!reportRows.length) return alert('Load an event report first.');
+
+  csvDownload('ANDRADE_Attendance_Report.csv',[
+    ['Student ID','Full Name','Grade Level','Section','Status','Check-in Time','Recorded By'],
+    ...reportRows.map(x=>[
+      x.studentId,
+      x.fullName,
+      x.gradeLevel,
+      x.section,
+      x.status,
+      x.checkInTime,
+      x.recordedBy
+    ])
+  ]);
+}
+
+function exportStudents(){
+  if(!students.length) return alert('No student records to export.');
+
+  csvDownload('ANDRADE_Students.csv',[
+    ['Student ID','Full Name','Grade Level','Section','Email'],
+    ...students.map(x=>[
+      x.studentId,
+      x.fullName,
+      x.gradeLevel,
+      x.section,
+      x.email
+    ])
+  ]);
+}
+
+function modal(html){
+  $('modal-root').innerHTML=`
+    <div class="modal-backdrop" onclick="if(event.target===this)closeModal()">
+      <div class="modal">${html}</div>
+    </div>
+  `;
+}
+
+function closeModal(){
+  $('modal-root').innerHTML='';
+}
+
+async function init(){
+  if($('api-url')) $('api-url').value=API_URL;
+
+  if(API_URL){
+    try{
+      await loadBaseData();
+      await refreshDashboard();
+    }catch(e){
+      console.warn(e);
+    }
+  }
+}
+
+init();
+</script>
+</body>
+</html>
