@@ -3,1513 +3,865 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#632b45">
-<title>SHSLSG: ANDRADE System</title>
+<title>SHSLSG: ANDRADE | Management Dashboard</title>
 
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
 :root {
-  --primary: #632b45;
-  --secondary: #d94f88;
-  --background: #f8f4f6;
-  --white: #ffffff;
-  --text: #30232a;
-  --muted: #82747b;
-  --border: #eadde3;
-  --success: #21865b;
-  --danger: #c43c52;
-  --warning: #c28a27;
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: Arial, Helvetica, sans-serif;
-  background: var(--background);
-  color: var(--text);
-}
-
-button, input, select, textarea {
-  font: inherit;
-}
-
-button {
-  cursor: pointer;
-  border: none;
-}
-
-.app {
-  display: flex;
-  min-height: 100vh;
-}
-
-.sidebar {
-  width: 250px;
-  background: var(--primary);
-  color: white;
-  padding: 25px 16px;
-  flex-shrink: 0;
-}
-
-.brand {
-  padding: 5px 12px 28px;
-}
-
-.brand h2 {
-  font-size: 19px;
-  letter-spacing: .5px;
-}
-
-.brand p {
-  font-size: 11px;
-  opacity: .75;
-  margin-top: 7px;
-}
-
-.nav-label {
-  font-size: 10px;
-  opacity: .6;
-  padding: 15px 12px 8px;
-  letter-spacing: 1.5px;
-}
-
-.nav-btn {
-  width: 100%;
-  text-align: left;
-  padding: 13px 12px;
-  color: white;
-  background: transparent;
-  border-radius: 9px;
-  margin: 3px 0;
-  font-size: 13px;
-}
-
-.nav-btn:hover, .nav-btn.active {
-  background: rgba(255,255,255,.16);
-}
-
-.main {
-  flex: 1;
-  min-width: 0;
-  padding: 28px;
-}
-
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 25px;
-  flex-wrap: wrap;
-}
-
-.topbar h1 {
-  color: var(--primary);
-  font-size: 25px;
-}
-
-.topbar p {
-  color: var(--muted);
-  font-size: 12px;
-  margin-top: 5px;
-}
-
-.connection {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 11px;
-  background: white;
-  padding: 10px 13px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  background: var(--warning);
-  border-radius: 50%;
-}
-
-.dot.online {
-  background: var(--success);
-}
-
-.dot.offline {
-  background: var(--danger);
-}
-
-.page {
-  display: none;
-}
-
-.page.active {
-  display: block;
-}
-
-.cards {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0,1fr));
-  gap: 15px;
-  margin-bottom: 23px;
-}
-
-.card {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 13px;
-  padding: 19px;
-  box-shadow: 0 3px 12px rgba(60,20,40,.035);
-}
-
-.card-label {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.card-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: var(--primary);
-  margin-top: 12px;
-}
-
-.card-note {
-  color: var(--muted);
-  font-size: 11px;
-  margin-top: 7px;
-}
-
-.panel {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 13px;
-  padding: 20px;
-  margin-bottom: 18px;
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 17px;
-}
-
-.panel-header h2 {
-  font-size: 16px;
-  color: var(--primary);
-}
-
-.btn {
-  padding: 10px 15px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.btn-primary {
-  background: var(--primary);
-  color: white;
-}
-
-.btn-secondary {
-  background: #f5e8ee;
-  color: var(--primary);
-}
-
-.btn-danger {
-  background: #fdebed;
-  color: var(--danger);
-}
-
-.btn:hover {
-  opacity: .85;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0,1fr));
-  gap: 14px;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.field.full {
-  grid-column: 1/-1;
-}
-
-.field label {
-  font-size: 12px;
-  font-weight: bold;
-  color: var(--primary);
-}
-
-.field input, .field select, .field textarea {
-  width: 100%;
-  padding: 11px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  outline: none;
-  background: white;
-  color: var(--text);
-}
-
-.field input:focus, .field select:focus, .field textarea:focus {
-  border-color: var(--secondary);
-}
-
-.field textarea {
-  min-height: 80px;
-  resize: vertical;
-}
-
-.form-actions {
-  display: flex;
-  gap: 9px;
-  margin-top: 18px;
-  flex-wrap: wrap;
-}
-
-.table-wrap {
-  width: 100%;
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 650px;
-}
-
-th {
-  text-align: left;
-  font-size: 11px;
-  color: var(--muted);
-  background: #faf6f8;
-  padding: 12px;
-  white-space: nowrap;
-}
-
-td {
-  padding: 12px;
-  border-bottom: 1px solid #f0e8ec;
-  font-size: 12px;
-}
-
-.status {
-  display: inline-block;
-  padding: 5px 9px;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: bold;
-}
-
-.status.active, .status.present {
-  color: var(--success);
-  background: #e7f5ed;
-}
-
-.status.late {
-  color: var(--warning);
-  background: #fff4df;
-}
-
-.status.absent, .status.inactive {
-  color: var(--danger);
-  background: #fdebed;
-}
-
-.actions {
-  display: flex;
-  gap: 5px;
-}
-
-.actions button {
-  padding: 7px 9px;
-  font-size: 10px;
-  border-radius: 6px;
-  background: #f5e8ee;
-  color: var(--primary);
-}
-
-.search {
-  max-width: 260px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-
-.empty {
-  text-align: center;
-  color: var(--muted);
-  padding: 30px;
-  font-size: 12px;
-}
-
-.notice {
-  padding: 12px;
-  border-radius: 8px;
-  font-size: 12px;
-  margin-bottom: 15px;
-  display: none;
-}
-
-.notice.show {
-  display: block;
-}
-
-.notice.error {
-  color: var(--danger);
-  background: #fdebed;
-}
-
-.notice.success {
-  color: var(--success);
-  background: #e7f5ed;
-}
-
-.modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(20,10,15,.55);
-  z-index: 10;
-  align-items: center;
-  justify-content: center;
-  padding: 15px;
-}
-
-.modal.show {
-  display: flex;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 14px;
-  padding: 23px;
-  width: 100%;
-  max-width: 560px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-content h2 {
-  color: var(--primary);
-  font-size: 18px;
-  margin-bottom: 18px;
-}
-
-.qr-preview {
-  text-align: center;
-  padding: 20px;
-}
-
-.qr-preview canvas, .qr-preview img {
-  margin: 15px auto;
-}
-
-.qr-name {
-  font-weight: bold;
-  color: var(--primary);
-  margin-top: 10px;
-}
-
-.qr-details {
-  color: var(--muted);
-  font-size: 12px;
-  margin-top: 6px;
-}
-
-.progress {
-  height: 8px;
-  border-radius: 10px;
-  background: #f1e5eb;
-  overflow: hidden;
-  margin-top: 10px;
-}
-
-.progress div {
-  height: 100%;
-  background: var(--secondary);
-}
-
-.connection-form {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.connection-form input {
-  flex: 1;
-  min-width: 200px;
-  padding: 11px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-
-.footer {
-  color: var(--muted);
-  text-align: center;
-  font-size: 10px;
-  padding: 25px 0;
-}
-
-@media(max-width:900px) {
-  .cards {
-    grid-template-columns: repeat(2,1fr);
-  }
-}
-
-@media(max-width:650px) {
-  .app {
-    display: block;
-  }
-
-  .sidebar {
-    width: 100%;
-    padding: 14px;
-  }
-
-  .brand {
-    padding: 5px 8px 12px;
-  }
-
-  .sidebar nav {
-    display: flex;
-    overflow-x: auto;
-    gap: 5px;
-  }
-
-  .nav-label {
-    display: none;
-  }
-
-  .nav-btn {
-    white-space: nowrap;
-    width: auto;
-    padding: 10px;
-  }
-
-  .main {
-    padding: 17px;
-  }
-
-  .topbar h1 {
-    font-size: 21px;
-  }
-
-  .cards {
-    gap: 9px;
-  }
-
-  .card {
-    padding: 14px;
-  }
-
-  .card-value {
-    font-size: 23px;
-  }
-
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .field.full {
-    grid-column: auto;
-  }
+  --maroon:#632b45;
+  --pink:#d94f88;
+  --light-pink:#fff0f6;
+  --bg:#fff8fb;
+  --text:#34242d;
+  --muted:#866f7a;
+  --border:#f2d4e1;
+  --green:#13834c;
+  --red:#c43c54;
+  --shadow:0 5px 20px rgba(99,43,69,.07);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:Arial,Helvetica,sans-serif;
+}
+header{
+  background:var(--maroon);color:white;padding:20px 5%;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:15px;flex-wrap:wrap;
+}
+header h1{font-size:23px;margin:0 0 6px}
+header p{margin:0;color:#f5dce7;font-size:14px}
+.header-actions{display:flex;gap:9px;flex-wrap:wrap}
+button,.button{
+  border:0;border-radius:11px;padding:12px 16px;
+  font-weight:bold;font-size:14px;cursor:pointer;
+  background:var(--light-pink);color:var(--maroon);
+}
+button:hover,.button:hover{filter:brightness(.97)}
+button.primary{background:var(--maroon);color:white}
+button.pink{background:var(--pink);color:white}
+button.danger{background:#fff0f0;color:var(--red)}
+button.small{padding:8px 11px;font-size:12px}
+button:disabled{opacity:.5;cursor:not-allowed}
+.app{max-width:1400px;margin:auto;padding:22px 4% 50px}
+.nav{
+  display:flex;gap:9px;overflow-x:auto;padding:5px 0 17px;
+}
+.nav button{white-space:nowrap;background:white;border:1px solid var(--border)}
+.nav button.active{background:var(--maroon);color:white;border-color:var(--maroon)}
+.page{display:none}
+.page.active{display:block}
+.page-title{margin:8px 0 5px;font-size:25px}
+.subtitle{color:var(--muted);margin:0 0 22px}
+.grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:15px;margin-bottom:20px;
+}
+.card,.panel{
+  background:white;border:1px solid var(--border);
+  border-radius:17px;padding:20px;box-shadow:var(--shadow);
+}
+.stat-label{color:var(--muted);font-size:13px;font-weight:bold}
+.stat-number{font-size:30px;font-weight:800;margin-top:10px;color:var(--maroon)}
+.panel{margin-bottom:18px}
+.panel h3{margin:0 0 15px}
+.panel-head{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:12px;flex-wrap:wrap;margin-bottom:15px;
+}
+.panel-head h3{margin:0}
+.form-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;
+}
+.field{display:flex;flex-direction:column;gap:7px}
+.field.full{grid-column:1/-1}
+label{font-size:13px;font-weight:bold}
+input,select,textarea{
+  width:100%;padding:12px;border:1px solid var(--border);
+  border-radius:10px;font:inherit;color:var(--text);background:white;
+}
+textarea{min-height:85px;resize:vertical}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:650px}
+th,td{text-align:left;padding:12px 10px;border-bottom:1px solid #f2e5eb;font-size:13px}
+th{color:var(--muted);background:#fff8fb}
+td .actions{margin:0}
+.muted{color:var(--muted)}
+.notice{
+  border-radius:11px;padding:13px 15px;margin:12px 0;
+  background:#fff0f6;color:var(--maroon);font-size:14px;
+}
+.notice.success{background:#e7f7ee;color:var(--green)}
+.notice.error{background:#fff0f0;color:var(--red)}
+.status-dot{
+  display:inline-block;width:9px;height:9px;border-radius:50%;
+  background:#aaa;margin-right:7px;
+}
+.status-dot.ok{background:#159451}
+.status-dot.bad{background:#d34a55}
+.hidden{display:none!important}
+.search{max-width:320px}
+.empty{text-align:center;color:var(--muted);padding:25px}
+#qrOutput{
+  display:flex;justify-content:center;align-items:center;
+  padding:15px;min-height:180px;
+}
+#qrOutput canvas,#qrOutput img{max-width:100%;height:auto}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:20px}
+@media(max-width:650px){
+  header{padding:17px 5%}
+  header h1{font-size:19px}
+  .app{padding:15px 4% 35px}
+  .form-grid{grid-template-columns:1fr}
+  .field.full{grid-column:auto}
+  .page-title{font-size:22px}
 }
 </style>
 </head>
 
 <body>
-
-<div class="app">
-
-<aside class="sidebar">
-  <div class="brand">
-    <h2>SHSLSG: ANDRADE</h2>
-    <p>STUDENT ATTENDANCE MANAGEMENT</p>
-  </div>
-
-  <nav>
-    <div class="nav-label">MAIN MENU</div>
-    <button class="nav-btn active" onclick="showPage('dashboard',this)">▦ Dashboard</button>
-    <button class="nav-btn" onclick="showPage('events',this)">▣ Events</button>
-    <button class="nav-btn" onclick="showPage('students',this)">♙ Students</button>
-    <button class="nav-btn" onclick="showPage('reports',this)">▤ Reports</button>
-    <div class="nav-label">SYSTEM</div>
-    <button class="nav-btn" onclick="showPage('connection',this)">⚙ Connection</button>
-  </nav>
-</aside>
-
-<main class="main">
-
-<div class="topbar">
+<header>
   <div>
-    <h1 id="pageTitle">Dashboard</h1>
-    <p>SHS Local Student Government · University of San Agustin</p>
+    <h1>SHSLSG: ANDRADE SYSTEM</h1>
+    <p>Student Attendance Management Dashboard</p>
   </div>
-
-  <div class="connection">
-    <span class="dot" id="connectionDot"></span>
-    <span id="connectionText">Not connected</span>
+  <div class="header-actions">
+    <button onclick="openScanner()">Open QR Scanner</button>
   </div>
-</div>
+</header>
 
-<div id="globalNotice" class="notice"></div>
+<main class="app">
+  <nav class="nav">
+    <button class="active" data-page="dashboard" onclick="showPage('dashboard',this)">Dashboard</button>
+    <button data-page="events" onclick="showPage('events',this)">Events</button>
+    <button data-page="students" onclick="showPage('students',this)">Students</button>
+    <button data-page="reports" onclick="showPage('reports',this)">Reports</button>
+    <button data-page="connection" onclick="showPage('connection',this)">Connection</button>
+  </nav>
 
-<!-- DASHBOARD -->
+  <div id="globalMessage"></div>
 
-<section class="page active" id="dashboard">
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="page active">
+    <h2 class="page-title">Dashboard Overview</h2>
+    <p class="subtitle">Monitor your student attendance system.</p>
 
-<div class="cards">
-  <div class="card">
-    <div class="card-label">Total Events</div>
-    <div class="card-value" id="totalEvents">0</div>
-    <div class="card-note">Registered events</div>
-  </div>
-
-  <div class="card">
-    <div class="card-label">Registered Students</div>
-    <div class="card-value" id="totalRegistered">0</div>
-    <div class="card-note">Student database</div>
-  </div>
-
-  <div class="card">
-    <div class="card-label">Checked In</div>
-    <div class="card-value" id="totalCheckedIn">0</div>
-    <div class="card-note">Attendance records</div>
-  </div>
-
-  <div class="card">
-    <div class="card-label">Attendance Rate</div>
-    <div class="card-value" id="attendanceRate">0%</div>
-    <div class="progress"><div id="attendanceProgress" style="width:0%"></div></div>
-  </div>
-</div>
-
-<div class="panel">
-  <div class="panel-header">
-    <h2>Attendance Overview</h2>
-    <button class="btn btn-secondary" onclick="refreshAll()">↻ Refresh</button>
-  </div>
-
-  <div class="cards">
-    <div>
-      <div class="card-label">Present</div>
-      <div class="card-value" id="totalPresent">0</div>
-    </div>
-    <div>
-      <div class="card-label">Late</div>
-      <div class="card-value" id="totalLate">0</div>
-    </div>
-    <div>
-      <div class="card-label">Absent</div>
-      <div class="card-value" id="totalAbsent">0</div>
-    </div>
-  </div>
-</div>
-
-<div class="panel">
-  <div class="panel-header">
-    <h2>Recent Attendance</h2>
-  </div>
-
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Student</th>
-          <th>Event</th>
-          <th>Check-in Time</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="recentAttendance">
-        <tr><td colspan="4" class="empty">No attendance records available.</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-</section>
-
-<!-- EVENTS -->
-
-<section class="page" id="events">
-
-<div class="panel">
-  <div class="panel-header">
-    <h2>Event Management</h2>
-    <button class="btn btn-primary" onclick="openEventModal()">+ Create Event</button>
-  </div>
-
-  <input class="search" placeholder="Search events..." oninput="filterTable('eventTable',this.value)">
-
-  <div class="table-wrap" style="margin-top:15px">
-    <table id="eventTable">
-      <thead>
-        <tr>
-          <th>Event Name</th>
-          <th>Date</th>
-          <th>Start Time</th>
-          <th>Late Cutoff</th>
-          <th>Venue</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="eventRows">
-        <tr><td colspan="7" class="empty">Loading events...</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-</section>
-
-<!-- STUDENTS -->
-
-<section class="page" id="students">
-
-<div class="panel">
-  <div class="panel-header">
-    <h2>Student Management</h2>
-    <button class="btn btn-primary" onclick="openStudentModal()">+ Register Student</button>
-  </div>
-
-  <input class="search" placeholder="Search students..." oninput="filterTable('studentTable',this.value)">
-
-  <div class="table-wrap" style="margin-top:15px">
-    <table id="studentTable">
-      <thead>
-        <tr>
-          <th>Student ID</th>
-          <th>Full Name</th>
-          <th>Grade</th>
-          <th>Section</th>
-          <th>Email</th>
-          <th>QR Code</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="studentRows">
-        <tr><td colspan="7" class="empty">Loading students...</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-</section>
-
-<!-- REPORTS -->
-
-<section class="page" id="reports">
-
-<div class="panel">
-  <div class="panel-header">
-    <h2>Attendance Reports</h2>
-  </div>
-
-  <div class="form-grid">
-    <div class="field">
-      <label>Select Event</label>
-      <select id="reportEvent">
-        <option value="">Choose an event</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Search Student</label>
-      <input id="reportSearch" placeholder="Search name or student ID..." oninput="filterTable('reportTable',this.value)">
-    </div>
-  </div>
-
-  <div class="form-actions">
-    <button class="btn btn-primary" onclick="loadReport()">Generate Report</button>
-    <button class="btn btn-secondary" onclick="exportReport()">Export CSV</button>
-  </div>
-
-  <div class="table-wrap" style="margin-top:20px">
-    <table id="reportTable">
-      <thead>
-        <tr>
-          <th>Student ID</th>
-          <th>Full Name</th>
-          <th>Grade</th>
-          <th>Section</th>
-          <th>Status</th>
-          <th>Check-in Time</th>
-          <th>Recorded By</th>
-        </tr>
-      </thead>
-      <tbody id="reportRows">
-        <tr><td colspan="7" class="empty">Select an event to generate a report.</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-</section>
-
-<!-- CONNECTION -->
-
-<section class="page" id="connection">
-
-<div class="panel">
-  <div class="panel-header">
-    <h2>Google Apps Script Connection</h2>
-  </div>
-
-  <p style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:15px">
-    Connect this GitHub Pages website to your Google Apps Script Version 4.2 backend. Use your deployed Web App URL ending in /exec.
-  </p>
-
-  <div class="field">
-    <label>Apps Script Web App URL</label>
-    <input id="apiUrl" placeholder="https://script.google.com/macros/s/XXXXX/exec">
-  </div>
-
-  <div class="form-actions">
-    <button class="btn btn-primary" onclick="saveApiUrl()">Save URL</button>
-    <button class="btn btn-secondary" onclick="testConnection()">Test Connection</button>
-  </div>
-
-  <div id="connectionResult" class="notice" style="margin-top:15px"></div>
-</div>
-
-<div class="panel">
-  <h2 style="font-size:16px;color:var(--primary);margin-bottom:12px">System Information</h2>
-  <p style="font-size:12px;line-height:2;color:var(--muted)">
-    System: SHSLSG: ANDRADE System<br>
-    Backend: Google Apps Script Version 4.2<br>
-    Database: Google Sheets<br>
-    Time Zone: Asia/Manila<br>
-    Hosting: GitHub Pages<br>
-    QR Format: STUDENT_ATTENDANCE v2
-  </p>
-</div>
-
-</section>
-
-<div class="footer">
-  SHSLSG: ANDRADE SYSTEM · UNIVERSITY OF SAN AGUSTIN<br>
-  Student Attendance Management System
-</div>
-
-</main>
-</div>
-
-<!-- EVENT MODAL -->
-
-<div class="modal" id="eventModal">
-<div class="modal-content">
-  <h2 id="eventModalTitle">Create Event</h2>
-
-  <form id="eventForm">
-    <input type="hidden" id="eventId">
-
-    <div class="form-grid">
-      <div class="field full">
-        <label>Event Name *</label>
-        <input id="eventName" required>
+    <div class="grid">
+      <div class="card">
+        <div class="stat-label">Total Events</div>
+        <div class="stat-number" id="statEvents">—</div>
       </div>
-
-      <div class="field">
-        <label>Event Date *</label>
-        <input type="date" id="eventDate" required>
+      <div class="card">
+        <div class="stat-label">Total Students</div>
+        <div class="stat-number" id="statStudents">—</div>
       </div>
-
-      <div class="field">
-        <label>Start Time *</label>
-        <input type="time" id="eventTime" required>
+      <div class="card">
+        <div class="stat-label">Present</div>
+        <div class="stat-number" id="statPresent">—</div>
       </div>
-
-      <div class="field">
-        <label>Late Cutoff Time *</label>
-        <input type="time" id="eventLate" required>
-      </div>
-
-      <div class="field">
-        <label>Venue</label>
-        <input id="eventVenue">
-      </div>
-
-      <div class="field">
-        <label>Organizer</label>
-        <input id="eventOrganizer">
-      </div>
-
-      <div class="field full">
-        <label>Description</label>
-        <textarea id="eventDescription"></textarea>
+      <div class="card">
+        <div class="stat-label">Attendance Rate</div>
+        <div class="stat-number" id="statRate">—</div>
       </div>
     </div>
 
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Save Event</button>
-      <button type="button" class="btn btn-secondary" onclick="closeModal('eventModal')">Cancel</button>
-    </div>
-  </form>
-</div>
-</div>
-
-<!-- STUDENT MODAL -->
-
-<div class="modal" id="studentModal">
-<div class="modal-content">
-  <h2 id="studentModalTitle">Register Student</h2>
-
-  <form id="studentForm">
-    <input type="hidden" id="participantId">
-
-    <div class="form-grid">
-      <div class="field">
-        <label>Student ID</label>
-        <input id="studentId">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Attendance Overview</h3>
+        <button class="small" onclick="loadDashboard()">Refresh</button>
       </div>
-
       <div class="field">
-        <label>Full Name *</label>
-        <input id="studentName" required>
-      </div>
-
-      <div class="field">
-        <label>Grade Level *</label>
-        <select id="studentGrade" required>
-          <option value="">Select Grade</option>
-          <option>Grade 11</option>
-          <option>Grade 12</option>
+        <label>Select event</label>
+        <select id="dashboardEvent" onchange="loadDashboardStats()">
+          <option value="">All events / Overall</option>
         </select>
       </div>
+      <div id="dashboardDetails" class="notice">
+        Connect your database and refresh the dashboard to load statistics.
+      </div>
+    </div>
 
+    <div class="panel">
+      <h3>Quick Actions</h3>
+      <div class="actions">
+        <button class="primary" onclick="showPage('events')">Create Event</button>
+        <button onclick="showPage('students')">Add Student</button>
+        <button onclick="showPage('reports')">View Reports</button>
+        <button onclick="openScanner()">Scan QR Code</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- EVENTS -->
+  <section id="events" class="page">
+    <h2 class="page-title">Event Management</h2>
+    <p class="subtitle">Create and manage attendance events.</p>
+
+    <div class="panel">
+      <h3 id="eventFormTitle">Create New Event</h3>
+      <form id="eventForm">
+        <input type="hidden" id="eventId">
+        <div class="form-grid">
+          <div class="field full">
+            <label>Event Name *</label>
+            <input id="eventName" required placeholder="Example: SHS General Assembly">
+          </div>
+          <div class="field">
+            <label>Event Date *</label>
+            <input id="eventDate" type="date" required>
+          </div>
+          <div class="field">
+            <label>Event Time</label>
+            <input id="eventTime" type="time">
+          </div>
+          <div class="field">
+            <label>Late Cutoff Time</label>
+            <input id="lateTime" type="time">
+          </div>
+          <div class="field">
+            <label>Venue</label>
+            <input id="eventVenue" placeholder="Event venue">
+          </div>
+          <div class="field full">
+            <label>Organizer</label>
+            <input id="eventOrganizer" placeholder="Organizing committee">
+          </div>
+          <div class="field full">
+            <label>Description</label>
+            <textarea id="eventDescription" placeholder="Event details"></textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" type="submit" id="eventSubmit">Save Event</button>
+          <button type="button" onclick="resetEventForm()">Clear Form</button>
+        </div>
+      </form>
+      <div id="eventMessage"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Registered Events</h3>
+        <button class="small" onclick="loadEvents()">Refresh Events</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Event Name</th><th>Date</th><th>Time</th><th>Venue</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="eventsTable">
+            <tr><td colspan="5" class="empty">Connect to load events.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- STUDENTS -->
+  <section id="students" class="page">
+    <h2 class="page-title">Student Management</h2>
+    <p class="subtitle">Manage student information and generate individual QR codes.</p>
+
+    <div class="panel">
+      <h3 id="studentFormTitle">Add New Student</h3>
+      <form id="studentForm">
+        <input type="hidden" id="participantId">
+        <div class="form-grid">
+          <div class="field">
+            <label>Student ID *</label>
+            <input id="studentId" required placeholder="Student ID">
+          </div>
+          <div class="field">
+            <label>Full Name *</label>
+            <input id="fullName" required placeholder="Last Name, First Name">
+          </div>
+          <div class="field">
+            <label>Grade Level *</label>
+            <select id="gradeLevel" required>
+              <option value="">Select grade</option>
+              <option value="11">Grade 11</option>
+              <option value="12">Grade 12</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Section *</label>
+            <input id="section" required placeholder="Example: STEM MHS 11-B">
+          </div>
+          <div class="field full">
+            <label>Email</label>
+            <input id="email" type="email" placeholder="Student email">
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" type="submit" id="studentSubmit">Save Student</button>
+          <button type="button" onclick="resetStudentForm()">Clear Form</button>
+        </div>
+      </form>
+      <div id="studentMessage"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Student Masterlist</h3>
+        <input class="search" id="studentSearch" placeholder="Search student..." oninput="renderStudents()">
+        <button class="small" onclick="loadStudents()">Refresh Students</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Student ID</th><th>Full Name</th><th>Grade</th><th>Section</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="studentsTable">
+            <tr><td colspan="5" class="empty">Connect to load students.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel hidden" id="qrPanel">
+      <div class="panel-head">
+        <h3>Student QR Code</h3>
+        <button class="small" onclick="closeQR()">Close</button>
+      </div>
+      <div id="qrStudentName" class="muted" style="text-align:center"></div>
+      <div id="qrOutput"></div>
+      <div class="actions" style="justify-content:center">
+        <button class="primary" onclick="downloadQR()">Download QR Code</button>
+      </div>
+      <p class="muted" style="text-align:center;font-size:12px">
+        This QR contains the student's attendance identification data.
+      </p>
+    </div>
+  </section>
+
+  <!-- REPORTS -->
+  <section id="reports" class="page">
+    <h2 class="page-title">Attendance Reports</h2>
+    <p class="subtitle">Generate and export attendance records.</p>
+
+    <div class="panel">
       <div class="field">
-        <label>Section</label>
-        <input id="studentSection">
+        <label>Select Event</label>
+        <select id="reportEvent">
+          <option value="">All events / Overall</option>
+        </select>
       </div>
+      <div class="actions">
+        <button class="primary" onclick="loadReport()">Generate Report</button>
+        <button onclick="exportCSV()">Export CSV</button>
+      </div>
+      <div id="reportMessage"></div>
+    </div>
 
-      <div class="field full">
-        <label>Email</label>
-        <input type="email" id="studentEmail">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Attendance Records</h3>
+        <span class="muted" id="reportCount">0 records</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Student ID</th><th>Student Name</th><th>Event</th>
+            <th>Check-in Time</th><th>Status</th>
+          </tr></thead>
+          <tbody id="reportTable">
+            <tr><td colspan="5" class="empty">Generate a report to view records.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONNECTION -->
+  <section id="connection" class="page">
+    <h2 class="page-title">System Connection</h2>
+    <p class="subtitle">Connect this dashboard to your ANDRADE attendance database.</p>
+
+    <div class="panel">
+      <h3>Google Apps Script API</h3>
+      <div class="field">
+        <label>Web App URL ending in /exec</label>
+        <input id="apiUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+      <div class="actions">
+        <button class="primary" onclick="saveConnection()">Save Connection</button>
+        <button onclick="testConnection()">Test Database Connection</button>
+      </div>
+      <div id="connectionMessage" class="notice">
+        <span class="status-dot bad"></span> Not yet tested.
       </div>
     </div>
 
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Save Student</button>
-      <button type="button" class="btn btn-secondary" onclick="closeModal('studentModal')">Cancel</button>
+    <div class="panel">
+      <h3>System Information</h3>
+      <p><strong>System:</strong> SHSLSG: ANDRADE</p>
+      <p><strong>Backend:</strong> Google Apps Script Version 4.2</p>
+      <p><strong>Database:</strong> Google Sheets</p>
+      <p><strong>Timezone:</strong> Asia/Manila</p>
+      <p><strong>Frontend:</strong> GitHub Pages</p>
     </div>
-  </form>
-</div>
-</div>
 
-<!-- QR MODAL -->
+    <div class="panel">
+      <h3>QR Scanner</h3>
+      <p class="muted">Open your separate camera scanner page to record student attendance.</p>
+      <button class="primary" onclick="openScanner()">Open QR Camera Scanner</button>
+    </div>
+  </section>
+</main>
 
-<div class="modal" id="qrModal">
-<div class="modal-content">
-  <h2>Student QR Code</h2>
-
-  <div class="qr-preview">
-    <div id="qrCanvas"></div>
-    <div class="qr-name" id="qrName"></div>
-    <div class="qr-details" id="qrDetails"></div>
-  </div>
-
-  <div class="form-actions" style="justify-content:center">
-    <button class="btn btn-primary" onclick="downloadQr()">Download QR Code</button>
-    <button class="btn btn-secondary" onclick="closeModal('qrModal')">Close</button>
-  </div>
-</div>
-</div>
+<footer>SHSLSG: ANDRADE SYSTEM · Student Attendance Management</footer>
 
 <script>
-/* =========================================================
-   CONFIGURATION
-========================================================= */
-
-let API_URL = localStorage.getItem('ANDRADE_API_URL') || '';
-
-let events = [];
-let students = [];
-let currentReport = [];
-let currentQr = null;
+"use strict";
 
 const $ = id => document.getElementById(id);
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, char => ({
-    '&':'&amp;',
-    '<':'&lt;',
-    '>':'&gt;',
-    '"':'&quot;',
-    "'":'&#39;'
-  })[char]);
-}
-
-function showNotice(message, type='success', target='globalNotice') {
-  const el = $(target);
-  el.textContent = message;
-  el.className = 'notice show ' + type;
-
-  if (target === 'globalNotice') {
-    setTimeout(() => el.classList.remove('show'), 5000);
-  }
-}
-
-function setConnection(online, text) {
-  $('connectionDot').className = 'dot ' + (online ? 'online' : 'offline');
-  $('connectionText').textContent = text;
-}
+const STORAGE_KEY = "ANDRADE_APPS_SCRIPT_URL";
+let events = [];
+let students = [];
+let reportRows = [];
+let currentQR = null;
 
 function showPage(page, button) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  $(page).classList.add('active');
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  $(page).classList.add("active");
+  document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+  const navButton = button || document.querySelector('[data-page="' + page + '"]');
+  if (navButton) navButton.classList.add("active");
 
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  if (button) button.classList.add('active');
-
-  const titles = {
-    dashboard:'Dashboard',
-    events:'Event Management',
-    students:'Student Management',
-    reports:'Attendance Reports',
-    connection:'System Connection'
-  };
-
-  $('pageTitle').textContent = titles[page] || 'ANDRADE System';
-
-  if (page === 'dashboard') loadDashboard();
-  if (page === 'events') loadEvents();
-  if (page === 'students') loadStudents();
+  if (page === "dashboard") loadDashboard();
+  if (page === "events") loadEvents();
+  if (page === "students") loadStudents();
+  if (page === "reports") populateEventSelects();
 }
 
-function closeModal(id) {
-  $(id).classList.remove('show');
+function message(target, text, type="notice") {
+  const el = $(target);
+  if (!el) return;
+  el.className = "notice " + type;
+  el.textContent = text;
 }
 
-function filterTable(tableId, query) {
-  const table = $(tableId);
-  const rows = table.querySelectorAll('tbody tr');
-  const q = query.toLowerCase();
-
-  rows.forEach(row => {
-    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
-  });
+function getApiUrl() {
+  return $("apiUrl").value.trim() || localStorage.getItem(STORAGE_KEY) || "";
 }
 
-/* =========================================================
-   API COMMUNICATION
-   Uses JSONP for cross-origin GitHub Pages access.
-========================================================= */
+function saveConnection() {
+  const url = $("apiUrl").value.trim();
+  if (!url) return message("connectionMessage","Please enter your Apps Script Web App URL.","error");
+  if (!url.startsWith("https://script.google.com/") || !url.endsWith("/exec")) {
+    return message("connectionMessage","Please enter the deployed Apps Script URL ending in /exec.","error");
+  }
+  localStorage.setItem(STORAGE_KEY,url);
+  message("connectionMessage","Connection URL saved. Now test the database connection.","success");
+}
 
 function api(action, data={}) {
-  return new Promise((resolve, reject) => {
-    if (!API_URL) {
-      reject(new Error('Please configure your Apps Script Web App URL first.'));
-      return;
-    }
+  return new Promise((resolve,reject) => {
+    const base = getApiUrl();
+    if (!base) return reject(new Error("No Apps Script URL. Open Connection and save your /exec URL."));
+    const url = new URL(base);
+    url.searchParams.set("api","1");
+    url.searchParams.set("action",action);
+    url.searchParams.set("data",JSON.stringify(data));
 
-    const callbackName = 'andradeCallback_' + Date.now() + '_' + Math.floor(Math.random()*100000);
-    const script = document.createElement('script');
+    const callback = "andradeCallback_" + Date.now() + "_" + Math.floor(Math.random()*100000);
+    url.searchParams.set("callback",callback);
 
-    const timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error('Connection timed out. Check your Web App deployment and permissions.'));
-    }, 20000);
-
-    function cleanup() {
-      clearTimeout(timeout);
-      delete window[callbackName];
+    const script = document.createElement("script");
+    let finished = false;
+    const cleanup = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      delete window[callback];
       script.remove();
-    }
-
-    window[callbackName] = result => {
-      cleanup();
-
-      if (!result || result.success === false) {
-        reject(new Error(result?.message || 'API request failed.'));
-        return;
-      }
-
-      resolve(result);
     };
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("Request timed out. Check your Apps Script deployment and internet connection."));
+    },25000);
 
-    const params = new URLSearchParams({
-      api:'1',
-      action,
-      callback:callbackName
-    });
-
-    Object.entries(data).forEach(([key,value]) => {
-      if (value !== undefined && value !== null) {
-        params.set(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
-      }
-    });
-
+    window[callback] = result => {
+      cleanup();
+      if (!result || result.success === false) {
+        reject(new Error(result?.message || "The API returned an unsuccessful response."));
+      } else resolve(result);
+    };
     script.onerror = () => {
       cleanup();
-      reject(new Error('Unable to reach Apps Script API.'));
+      reject(new Error("Could not contact the Apps Script API. Verify your /exec URL and deployment access."));
     };
-
-    script.src = API_URL + '?' + params.toString();
+    script.src = url.toString();
     document.body.appendChild(script);
   });
 }
 
-/* =========================================================
-   CONNECTION
-========================================================= */
-
-function saveApiUrl() {
-  const url = $('apiUrl').value.trim();
-
-  if (!url.startsWith('https://script.google.com/macros/s/') || !url.endsWith('/exec')) {
-    showNotice('Please enter a valid deployed Apps Script Web App URL ending in /exec.', 'error', 'connectionResult');
-    return;
-  }
-
-  API_URL = url;
-  localStorage.setItem('ANDRADE_API_URL', url);
-
-  showNotice('Web App URL saved successfully.', 'success', 'connectionResult');
-  testConnection();
-}
-
 async function testConnection() {
-  if (!$('apiUrl').value.trim() && API_URL) {
-    $('apiUrl').value = API_URL;
-  }
-
-  API_URL = $('apiUrl').value.trim() || API_URL;
-
-  if (!API_URL) {
-    showNotice('Enter your Apps Script Web App URL first.', 'error', 'connectionResult');
-    return;
-  }
-
+  const url = $("apiUrl").value.trim();
+  if (url) saveConnection();
+  message("connectionMessage","Testing database connection...");
   try {
-    const result = await api('ping');
-    setConnection(true, 'API Online');
-    showNotice(result.message + ' · ' + result.serverTime, 'success', 'connectionResult');
-    await refreshAll();
-  } catch (error) {
-    setConnection(false, 'Connection Error');
-    showNotice(error.message, 'error', 'connectionResult');
+    const result = await api("ping");
+    message("connectionMessage",result.message || "Database connection successful.","success");
+    await loadEvents();
+    await loadStudents();
+    await loadDashboard();
+  } catch(err) {
+    message("connectionMessage",err.message,"error");
   }
 }
 
-/* =========================================================
-   DASHBOARD
-========================================================= */
-
-async function loadDashboard() {
-  try {
-    const data = await api('getDashboard');
-
-    $('totalEvents').textContent = data.totalEvents ?? 0;
-    $('totalRegistered').textContent = data.totalRegistered ?? 0;
-    $('totalCheckedIn').textContent = data.totalCheckedIn ?? 0;
-    $('attendanceRate').textContent = (data.attendanceRate ?? 0) + '%';
-    $('attendanceProgress').style.width = (data.attendanceRate ?? 0) + '%';
-    $('totalPresent').textContent = data.totalPresent ?? 0;
-    $('totalLate').textContent = data.totalLate ?? 0;
-    $('totalAbsent').textContent = data.totalAbsent ?? 0;
-
-    const rows = data.recentAttendance || [];
-
-    $('recentAttendance').innerHTML = rows.length
-      ? rows.map(r => `
-        <tr>
-          <td>${escapeHtml(r.fullName)}</td>
-          <td>${escapeHtml(r.eventName)}</td>
-          <td>${escapeHtml(r.checkInTime)}</td>
-          <td><span class="status ${String(r.status).toLowerCase()}">${escapeHtml(r.status)}</span></td>
-        </tr>
-      `).join('')
-      : '<tr><td colspan="4" class="empty">No attendance records available.</td></tr>';
-
-  } catch (error) {
-    showNotice(error.message, 'error');
-  }
-}
-
-/* =========================================================
-   EVENTS
-========================================================= */
+function eventIdOf(e){return e.eventId || e.id || e["Event ID"] || "";}
+function eventNameOf(e){return e.name || e.eventName || e["Event Name"] || "Untitled event";}
+function studentIdOf(s){return s.studentId || s["Student ID"] || "";}
+function participantIdOf(s){return s.participantId || s.id || s["Participant ID"] || "";}
+function fullNameOf(s){return s.fullName || s.name || s["Full Name"] || "";}
+function dateOf(e){return e.date || e.eventDate || e["Event Date"] || "";}
+function timeOf(e){return e.time || e.eventTime || e["Event Time"] || "";}
+function venueOf(e){return e.venue || e["Venue"] || "";}
 
 async function loadEvents() {
   try {
-    const result = await api('getEvents');
-    events = result.events || [];
-
-    $('eventRows').innerHTML = events.length
-      ? events.map(e => `
-        <tr>
-          <td><strong>${escapeHtml(e.name)}</strong></td>
-          <td>${escapeHtml(e.date)}</td>
-          <td>${escapeHtml(e.time)}</td>
-          <td>${escapeHtml(e.lateTime)}</td>
-          <td>${escapeHtml(e.venue)}</td>
-          <td><span class="status ${String(e.status).toLowerCase()}">${escapeHtml(e.status)}</span></td>
-          <td>
-            <div class="actions">
-              <button onclick="editEvent('${escapeHtml(e.id)}')">Edit</button>
-              <button onclick="removeEvent('${escapeHtml(e.id)}')">Delete</button>
-            </div>
-          </td>
-        </tr>
-      `).join('')
-      : '<tr><td colspan="7" class="empty">No events created yet.</td></tr>';
-
-    $('reportEvent').innerHTML =
-      '<option value="">Choose an event</option>' +
-      events.map(e => `<option value="${escapeHtml(e.id)}">${escapeHtml(e.name)} — ${escapeHtml(e.date)}</option>`).join('');
-
-  } catch (error) {
-    showNotice(error.message, 'error');
+    const result = await api("getEvents");
+    events = result.events || result.data || [];
+    renderEvents();
+    populateEventSelects();
+  } catch(err) {
+    $("eventsTable").innerHTML = '<tr><td colspan="5" class="empty"></td></tr>';
+    $("eventsTable").querySelector(".empty").textContent = err.message;
   }
 }
 
-function openEventModal(event=null) {
-  $('eventForm').reset();
-  $('eventId').value = '';
-
-  $('eventModalTitle').textContent = event ? 'Edit Event' : 'Create Event';
-
-  if (event) {
-    $('eventId').value = event.id;
-    $('eventName').value = event.name;
-    $('eventDate').value = event.date;
-    $('eventTime').value = event.time;
-    $('eventLate').value = event.lateTime;
-    $('eventVenue').value = event.venue;
-    $('eventOrganizer').value = event.organizer;
-    $('eventDescription').value = event.description;
+function renderEvents() {
+  const body = $("eventsTable");
+  if (!events.length) {
+    body.innerHTML = '<tr><td colspan="5" class="empty">No events found. Create your first event above.</td></tr>';
+    return;
   }
-
-  $('eventModal').classList.add('show');
+  body.innerHTML = events.map(e => {
+    const id = eventIdOf(e);
+    return `<tr>
+      <td>${esc(eventNameOf(e))}</td>
+      <td>${esc(dateOf(e))}</td>
+      <td>${esc(timeOf(e))}</td>
+      <td>${esc(venueOf(e))}</td>
+      <td><div class="actions">
+        <button class="small" onclick="editEvent('${attr(id)}')">Edit</button>
+        <button class="small danger" onclick="deleteEvent('${attr(id)}')">Delete</button>
+      </div></td>
+    </tr>`;
+  }).join("");
 }
 
-function editEvent(id) {
-  const event = events.find(e => e.id === id);
-  if (event) openEventModal(event);
+function populateEventSelects() {
+  ["dashboardEvent","reportEvent"].forEach(id => {
+    const select = $(id);
+    if (!select) return;
+    const old = select.value;
+    select.innerHTML = '<option value="">All events / Overall</option>' +
+      events.map(e => `<option value="${attr(eventIdOf(e))}">${esc(eventNameOf(e))}</option>`).join("");
+    if ([...select.options].some(o=>o.value===old)) select.value=old;
+  });
 }
 
-$('eventForm').addEventListener('submit', async event => {
-  event.preventDefault();
-
-  const eventId = $('eventId').value;
-
-  const data = {
-    name:$('eventName').value.trim(),
-    date:$('eventDate').value,
-    time:$('eventTime').value,
-    lateTime:$('eventLate').value,
-    venue:$('eventVenue').value.trim(),
-    organizer:$('eventOrganizer').value.trim(),
-    description:$('eventDescription').value.trim()
+$("eventForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const id=$("eventId").value;
+  const data={
+    name:$("eventName").value.trim(),
+    date:$("eventDate").value,
+    time:$("eventTime").value,
+    lateTime:$("lateTime").value,
+    venue:$("eventVenue").value.trim(),
+    organizer:$("eventOrganizer").value.trim(),
+    description:$("eventDescription").value.trim()
   };
-
   try {
-    const result = await api(eventId ? 'updateEvent' : 'createEvent', {
-      ...data,
-      ...(eventId ? {eventId} : {})
-    });
-
-    closeModal('eventModal');
-    showNotice(result.message || 'Event saved successfully.');
+    if(id) {
+      await api("updateEvent",{eventId:id,...data});
+      message("eventMessage","Event updated successfully.","success");
+    } else {
+      await api("createEvent",data);
+      message("eventMessage","Event created successfully.","success");
+    }
+    resetEventForm();
     await loadEvents();
     await loadDashboard();
-
-  } catch (error) {
-    showNotice(error.message, 'error');
-  }
+  } catch(err) { message("eventMessage",err.message,"error"); }
 });
 
-async function removeEvent(id) {
-  if (!confirm('Delete this event and its attendance records? This action cannot be undone.')) return;
-
-  try {
-    const result = await api('deleteEvent', {eventId:id});
-    showNotice(result.message || 'Event deleted.');
-    await loadEvents();
-    await loadDashboard();
-  } catch (error) {
-    showNotice(error.message, 'error');
-  }
+function editEvent(id) {
+  const e=events.find(x=>String(eventIdOf(x))===String(id));
+  if(!e) return;
+  $("eventId").value=id;
+  $("eventName").value=eventNameOf(e);
+  $("eventDate").value=dateOf(e);
+  $("eventTime").value=timeOf(e);
+  $("lateTime").value=e.lateTime || e["Late Cutoff Time"] || "";
+  $("eventVenue").value=venueOf(e);
+  $("eventOrganizer").value=e.organizer || e["Organizer"] || "";
+  $("eventDescription").value=e.description || e["Description"] || "";
+  $("eventFormTitle").textContent="Edit Event";
+  $("eventSubmit").textContent="Update Event";
+  $("eventForm").scrollIntoView({behavior:"smooth"});
 }
 
-/* =========================================================
-   STUDENTS
-========================================================= */
+function resetEventForm() {
+  $("eventForm").reset();
+  $("eventId").value="";
+  $("eventFormTitle").textContent="Create New Event";
+  $("eventSubmit").textContent="Save Event";
+}
+
+async function deleteEvent(id) {
+  if(!confirm("Delete this event? This action may affect its related records.")) return;
+  try {
+    await api("deleteEvent",{eventId:id});
+    await loadEvents();
+    await loadDashboard();
+    alert("Event deleted.");
+  } catch(err) { alert(err.message); }
+}
 
 async function loadStudents() {
   try {
-    const result = await api('getParticipants');
-    students = result.participants || [];
-
-    $('studentRows').innerHTML = students.length
-      ? students.map(s => `
-        <tr>
-          <td>${escapeHtml(s.studentId)}</td>
-          <td><strong>${escapeHtml(s.fullName)}</strong></td>
-          <td>${escapeHtml(s.gradeLevel)}</td>
-          <td>${escapeHtml(s.section)}</td>
-          <td>${escapeHtml(s.email)}</td>
-          <td><button class="btn btn-secondary" onclick="showQr('${escapeHtml(s.id)}')">View QR</button></td>
-          <td>
-            <div class="actions">
-              <button onclick="editStudent('${escapeHtml(s.id)}')">Edit</button>
-              <button onclick="removeStudent('${escapeHtml(s.id)}')">Delete</button>
-            </div>
-          </td>
-        </tr>
-      `).join('')
-      : '<tr><td colspan="7" class="empty">No students registered yet.</td></tr>';
-
-  } catch (error) {
-    showNotice(error.message, 'error');
+    const result=await api("getParticipants");
+    students=result.participants || result.students || result.data || [];
+    renderStudents();
+  } catch(err) {
+    $("studentsTable").innerHTML='<tr><td colspan="5" class="empty"></td></tr>';
+    $("studentsTable").querySelector(".empty").textContent=err.message;
   }
 }
 
-function openStudentModal(student=null) {
-  $('studentForm').reset();
-  $('participantId').value = '';
-
-  $('studentModalTitle').textContent = student ? 'Edit Student' : 'Register Student';
-
-  if (student) {
-    $('participantId').value = student.id;
-    $('studentId').value = student.studentId;
-    $('studentName').value = student.fullName;
-    $('studentGrade').value = student.gradeLevel;
-    $('studentSection').value = student.section;
-    $('studentEmail').value = student.email;
-  }
-
-  $('studentModal').classList.add('show');
+function renderStudents() {
+  const q=$("studentSearch").value.toLowerCase();
+  const filtered=students.filter(s=>
+    [studentIdOf(s),fullNameOf(s),s.gradeLevel||s["Grade Level"],s.section||s["Section"]]
+    .join(" ").toLowerCase().includes(q)
+  );
+  $("studentsTable").innerHTML=filtered.length ? filtered.map(s=>{
+    const pid=participantIdOf(s);
+    return `<tr>
+      <td>${esc(studentIdOf(s))}</td>
+      <td>${esc(fullNameOf(s))}</td>
+      <td>${esc(s.gradeLevel||s["Grade Level"]||"")}</td>
+      <td>${esc(s.section||s["Section"]||"")}</td>
+      <td><div class="actions">
+        <button class="small" onclick="editStudent('${attr(pid)}')">Edit</button>
+        <button class="small pink" onclick="showQR('${attr(pid)}')">QR Code</button>
+        <button class="small danger" onclick="deleteStudent('${attr(pid)}')">Delete</button>
+      </div></td>
+    </tr>`;
+  }).join(""):'<tr><td colspan="5" class="empty">No matching students found.</td></tr>';
 }
 
-function editStudent(id) {
-  const student = students.find(s => s.id === id);
-  if (student) openStudentModal(student);
-}
-
-$('studentForm').addEventListener('submit', async event => {
-  event.preventDefault();
-
-  const participantId = $('participantId').value;
-
-  const data = {
-    studentId:$('studentId').value.trim(),
-    fullName:$('studentName').value.trim(),
-    gradeLevel:$('studentGrade').value,
-    section:$('studentSection').value.trim(),
-    email:$('studentEmail').value.trim()
+$("studentForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const pid=$("participantId").value;
+  const data={
+    studentId:$("studentId").value.trim(),
+    fullName:$("fullName").value.trim(),
+    gradeLevel:$("gradeLevel").value,
+    section:$("section").value.trim(),
+    email:$("email").value.trim()
   };
-
   try {
-    const result = await api(
-      participantId ? 'updateParticipant' : 'addParticipant',
-      participantId ? {...data, participantId} : data
-    );
-
-    closeModal('studentModal');
-    showNotice(result.message || 'Student saved successfully.');
-
+    if(pid) {
+      await api("updateParticipant",{participantId:pid,...data});
+      message("studentMessage","Student updated successfully.","success");
+    } else {
+      await api("addParticipant",data);
+      message("studentMessage","Student added successfully.","success");
+    }
+    resetStudentForm();
     await loadStudents();
     await loadDashboard();
-
-  } catch (error) {
-    showNotice(error.message, 'error');
-  }
+  } catch(err) { message("studentMessage",err.message,"error"); }
 });
 
-async function removeStudent(id) {
-  if (!confirm('Delete this student and their attendance records?')) return;
+function editStudent(id) {
+  const s=students.find(x=>String(participantIdOf(x))===String(id));
+  if(!s) return;
+  $("participantId").value=id;
+  $("studentId").value=studentIdOf(s);
+  $("fullName").value=fullNameOf(s);
+  $("gradeLevel").value=s.gradeLevel||s["Grade Level"]||"";
+  $("section").value=s.section||s["Section"]||"";
+  $("email").value=s.email||s["Email"]||"";
+  $("studentFormTitle").textContent="Edit Student";
+  $("studentSubmit").textContent="Update Student";
+  $("studentForm").scrollIntoView({behavior:"smooth"});
+}
 
+function resetStudentForm() {
+  $("studentForm").reset();
+  $("participantId").value="";
+  $("studentFormTitle").textContent="Add New Student";
+  $("studentSubmit").textContent="Save Student";
+}
+
+async function deleteStudent(id) {
+  if(!confirm("Delete this student?")) return;
   try {
-    const result = await api('deleteParticipant', {participantId:id});
-    showNotice(result.message || 'Student deleted.');
+    await api("deleteParticipant",{participantId:id});
     await loadStudents();
     await loadDashboard();
-  } catch (error) {
-    showNotice(error.message, 'error');
-  }
+    alert("Student deleted.");
+  } catch(err) { alert(err.message); }
 }
 
-/* =========================================================
-   QR CODE GENERATION
-========================================================= */
-
-function showQr(id) {
-  const student = students.find(s => s.id === id);
-  if (!student) return;
-
-  const qrData = student.qrData || JSON.stringify({
-    type:'STUDENT_ATTENDANCE',
-    participantId:student.id,
-    studentId:student.studentId,
+function showQR(id) {
+  const s=students.find(x=>String(participantIdOf(x))===String(id));
+  if(!s) return alert("Student record not found.");
+  const payload={
+    type:"STUDENT_ATTENDANCE",
+    participantId:participantIdOf(s),
+    studentId:studentIdOf(s),
     version:2
-  });
-
-  $('qrCanvas').innerHTML = '';
-  $('qrName').textContent = student.fullName;
-  $('qrDetails').textContent =
-    student.gradeLevel + ' · ' + student.section;
-
-  if (typeof QRCode === 'undefined') {
-    showNotice('QR library could not load. Check your internet connection.', 'error');
+  };
+  $("qrOutput").innerHTML="";
+  $("qrStudentName").textContent=fullNameOf(s)+" · "+studentIdOf(s);
+  $("qrPanel").classList.remove("hidden");
+  currentQR={payload,student:s};
+  if(typeof QRCode==="undefined") {
+    $("qrOutput").textContent="QR generator could not load. Check your internet connection.";
     return;
   }
-
-  new QRCode($('qrCanvas'), {
-    text:qrData,
-    width:220,
-    height:220,
-    colorDark:'#632b45',
-    colorLight:'#ffffff',
+  new QRCode($("qrOutput"),{
+    text:JSON.stringify(payload),width:220,height:220,
+    colorDark:"#632b45",colorLight:"#ffffff",
     correctLevel:QRCode.CorrectLevel.H
   });
-
-  currentQr = {
-    studentId:student.studentId,
-    fullName:student.fullName
-  };
-
-  $('qrModal').classList.add('show');
+  $("qrPanel").scrollIntoView({behavior:"smooth"});
 }
 
-function downloadQr() {
-  const canvas = $('qrCanvas').querySelector('canvas');
+function closeQR() {
+  $("qrPanel").classList.add("hidden");
+  $("qrOutput").innerHTML="";
+  currentQR=null;
+}
 
-  if (!canvas || !currentQr) {
-    showNotice('QR code is not ready.', 'error');
-    return;
-  }
-
-  const link = document.createElement('a');
-  link.download = currentQr.studentId + '_QR_Code.png';
-  link.href = canvas.toDataURL('image/png');
+function downloadQR() {
+  const canvas=$("qrOutput").querySelector("canvas");
+  const img=$("qrOutput").querySelector("img");
+  const source=canvas?canvas.toDataURL("image/png"):img?.src;
+  if(!source) return alert("Generate a QR code first.");
+  const link=document.createElement("a");
+  const s=currentQR?.student || {};
+  link.href=source;
+  link.download=(studentIdOf(s)||"student")+"-QR.png";
   link.click();
 }
 
-/* =========================================================
-   REPORTS
-========================================================= */
+async function loadDashboard() {
+  try {
+    if(!events.length) await loadEvents();
+    if(!students.length) await loadStudents();
+    $("statEvents").textContent=events.length;
+    $("statStudents").textContent=students.length;
+    await loadDashboardStats();
+  } catch(err) {
+    $("dashboardDetails").textContent=err.message;
+  }
+}
+
+async function loadDashboardStats() {
+  try {
+    const eventId=$("dashboardEvent").value;
+    const result=await api("getDashboard",eventId?{eventId}:{});
+    const data=result.dashboard || result.stats || result;
+    const present=numberFrom(data,["present","totalPresent","attendanceCount","totalAttendance"]);
+    const rate=numberFrom(data,["attendanceRate","rate","percentage"]);
+    $("statPresent").textContent=present===null?"—":present;
+    $("statRate").textContent=rate===null?"—":(rate+"%");
+    $("dashboardDetails").textContent=
+      "Dashboard data refreshed. Registered events: "+events.length+
+      ". Student records: "+students.length+
+      ". Select an event to view its attendance summary.";
+  } catch(err) {
+    $("dashboardDetails").textContent="Could not load dashboard statistics: "+err.message;
+  }
+}
+
+function numberFrom(obj,keys) {
+  for(const key of keys) {
+    if(obj && obj[key]!==undefined && obj[key]!==null && obj[key]!=="") {
+      const n=Number(String(obj[key]).replace("%",""));
+      if(Number.isFinite(n)) return n;
+    }
+  }
+  return null;
+}
 
 async function loadReport() {
-  const eventId = $('reportEvent').value;
-
-  if (!eventId) {
-    showNotice('Please select an event first.', 'error');
-    return;
-  }
-
+  const eventId=$("reportEvent").value;
+  message("reportMessage","Generating attendance report...");
   try {
-    const result = await api('getReport', {eventId});
-    currentReport = result.report || [];
-
-    $('reportRows').innerHTML = currentReport.length
-      ? currentReport.map(r => `
-        <tr>
-          <td>${escapeHtml(r.studentId)}</td>
-          <td>${escapeHtml(r.fullName)}</td>
-          <td>${escapeHtml(r.gradeLevel)}</td>
-          <td>${escapeHtml(r.section)}</td>
-          <td><span class="status ${String(r.status).toLowerCase()}">${escapeHtml(r.status)}</span></td>
-          <td>${escapeHtml(r.checkInTime)}</td>
-          <td>${escapeHtml(r.recordedBy)}</td>
-        </tr>
-      `).join('')
-      : '<tr><td colspan="7" class="empty">No students found.</td></tr>';
-
-  } catch (error) {
-    showNotice(error.message, 'error');
+    const result=await api("getReport",eventId?{eventId}:{});
+    reportRows=result.report || result.records || result.data || [];
+    renderReport();
+    message("reportMessage","Report generated successfully.","success");
+  } catch(err) {
+    reportRows=[];
+    renderReport();
+    message("reportMessage",err.message,"error");
   }
 }
 
-function exportReport() {
-  if (!currentReport.length) {
-    showNotice('Generate a report before exporting.', 'error');
+function renderReport() {
+  $("reportCount").textContent=reportRows.length+" records";
+  if(!reportRows.length) {
+    $("reportTable").innerHTML='<tr><td colspan="5" class="empty">No attendance records found.</td></tr>';
     return;
   }
+  $("reportTable").innerHTML=reportRows.map(r=>`<tr>
+    <td>${esc(r.studentId||r["Student ID"]||"")}</td>
+    <td>${esc(r.fullName||r["Full Name"]||"")}</td>
+    <td>${esc(r.eventName||r["Event Name"]||"")}</td>
+    <td>${esc(r.checkInTime||r.timestamp||r["Check-in Time"]||"")}</td>
+    <td>${esc(r.status||r.attendanceStatus||r["Attendance Status"]||"")}</td>
+  </tr>`).join("");
+}
 
-  const headers = [
-    'Student ID',
-    'Full Name',
-    'Grade Level',
-    'Section',
-    'Status',
-    'Check-in Time',
-    'Recorded By'
+function exportCSV() {
+  if(!reportRows.length) return alert("Generate a report first.");
+  const cols=[
+    ["Student ID","studentId"],["Full Name","fullName"],
+    ["Event Name","eventName"],["Check-in Time","checkInTime"],
+    ["Attendance Status","status"]
   ];
-
-  const rows = currentReport.map(r => [
-    r.studentId,
-    r.fullName,
-    r.gradeLevel,
-    r.section,
-    r.status,
-    r.checkInTime,
-    r.recordedBy
-  ]);
-
-  const csv = [headers,...rows]
-    .map(row => row.map(value =>
-      '"' + String(value ?? '').replace(/"/g,'""') + '"'
-    ).join(','))
-    .join('\r\n');
-
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-
-  link.href = url;
-  link.download = 'ANDRADE_Attendance_Report.csv';
-  link.click();
-
+  const value=(r,label,key)=>r[key]??r[label]??"";
+  const lines=[cols.map(c=>csv(c[0])).join(",")];
+  reportRows.forEach(r=>lines.push(cols.map(c=>csv(value(r,c[0],c[1]))).join(",")));
+  const blob=new Blob(["\uFEFF"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="ANDRADE-Attendance-Report.csv";a.click();
   URL.revokeObjectURL(url);
 }
 
-/* =========================================================
-   REFRESH
-========================================================= */
+function csv(v){return '"'+String(v??"").replace(/"/g,'""')+'"';}
+function esc(v){
+  return String(v??"").replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
+function attr(v){return String(v??"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
 
-async function refreshAll() {
-  if (!API_URL) return;
-
-  await Promise.allSettled([
-    loadDashboard(),
-    loadEvents(),
-    loadStudents()
-  ]);
+function openScanner() {
+  window.open(new URL("scanner.html",window.location.href).href,"_blank");
 }
 
-/* =========================================================
-   INITIALIZATION
-========================================================= */
-
-window.addEventListener('DOMContentLoaded', async () => {
-  if (API_URL) {
-    $('apiUrl').value = API_URL;
-    await testConnection();
-  } else {
-    setConnection(false, 'Not connected');
-  }
+window.addEventListener("DOMContentLoaded",()=>{
+  const saved=localStorage.getItem(STORAGE_KEY);
+  if(saved) $("apiUrl").value=saved;
+  if(saved) testConnection();
 });
 </script>
-
 </body>
 </html>
